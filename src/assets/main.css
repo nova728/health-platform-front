@@ -1,0 +1,43 @@
+@import './base.css';
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh; /* 使用视口高度 */
+  width: 100%;
+  overflow-x: hidden;
+}
+#app {
+  min-height: 100vh;  /* 使用视口高度 */
+  width: 100%;        /* 确保宽度100% */
+  margin: 0 auto;     /* 居中 */
+  font-weight: normal;
+  display: flex;      /* 使用 flex 布局 */
+  flex-direction: column; /* 垂直方向排列 */
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    /*display: grid;
+    grid-template-columns: 1fr 1fr;*/
+    /*padding: 0 2rem;*/
+  }
+}

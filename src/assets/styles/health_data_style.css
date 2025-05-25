@@ -1,0 +1,714 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.error-message{
+    color:red;
+    font-size: small;
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background-color: #3b82f6;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-button:hover {
+    background-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.add-button .icon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 480px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.close-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.close-button .icon {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+.modal-body {
+    margin-bottom: 24px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cancel-button {
+    padding: 12px 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: white;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.record-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background-color: #3b82f6;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.record-button:hover {
+    background-color: #2563eb;
+}
+
+.record-button:disabled,
+.cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.data-list {
+    margin-top: 24px;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    margin-right: 20px;
+    border: none;
+    background-color: transparent;
+    color: #64748b;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+
+.back-button .icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+}
+
+.stat-header .card-icon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+    color: #3b82f6;
+}
+
+.stat-header span {
+    font-weight: 500;
+    color: #475569;
+}
+
+.data-count {
+    color: #909399;
+    font-size: 14px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ebeef5;
+}
+
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 500;
+    color: #475569;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+}
+
+td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 14px;
+}
+
+tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.status-normal {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.status-high {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-low {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.status-normal {
+    color: #67c23a;
+    background-color: #f0f9eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.status-high {
+    color: #f56c6c;
+    background-color: #fef0f0;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.status-low {
+    color: #909399;
+    background-color: #f4f4f5;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.heart-rate-detail {
+    padding: 20px;
+    height: 100%;
+    background-color: #f8fafc;
+    overflow-y: auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    margin-right: 20px;
+    border: none;
+    background-color: transparent;
+    color: #64748b;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    background-color: #f5f7fa;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.current-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #606266;
+    margin-bottom: 16px;
+}
+
+.card-icon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+}
+
+.stat-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.value {
+    font-size: 64px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.unit {
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.stat-status:hover {
+    transform: scale(1.05);
+}
+
+.normal {
+    background: #f0f9eb;
+    color: #67c23a;
+}
+
+.high {
+    background: #fef0f0;
+    color: #f56c6c;
+}
+
+.low {
+    background: #f4f4f5;
+    color: #909399;
+}
+
+.chart-card {
+    min-height: 400px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.time-selector {
+    display: flex;
+    gap: 8px;
+    background-color: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+}
+
+.time-selector button {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.time-selector button:hover {
+    color: #334155;
+}
+
+.time-selector button.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.chart-container {
+    height: 300px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.stat-card {
+    padding: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 140px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+/* 日平均心率卡片 */
+.stat-card:nth-child(1) {
+    background: linear-gradient(145deg, #ffffff 0%, rgba(59, 130, 246, 0.05) 100%);
+}
+
+.stat-card:nth-child(1)::before {
+    background: #3b82f6;  /* 主蓝色 */
+}
+
+/* 最高心率卡片 */
+.stat-card:nth-child(2) {
+    background: linear-gradient(145deg, #ffffff 0%, rgba(37, 99, 235, 0.05) 100%);
+}
+
+.stat-card:nth-child(2)::before {
+    background: #2563eb;  /* 深蓝色 */
+}
+
+/* 最低心率卡片 */
+.stat-card:nth-child(3) {
+    background: linear-gradient(145deg, #ffffff 0%, rgba(96, 165, 250, 0.05) 100%);
+}
+
+.stat-card:nth-child(3)::before {
+    background: #60a5fa;  /* 浅蓝色 */
+}
+
+/* 静息心率卡片 */
+.stat-card:nth-child(4) {
+    background: linear-gradient(145deg, #ffffff 0%, rgba(147, 197, 253, 0.05) 100%);
+}
+
+.stat-card:nth-child(4)::before {
+    background: #93c5fd;  /* 最浅蓝色 */
+}
+
+/* 卡片悬浮效果 */
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1),
+    0 2px 4px -2px rgba(59, 130, 246, 0.1);
+}
+
+/* 标签样式 */
+.stat-label {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    transition: color 0.3s ease;
+}
+
+/* 数值样式 */
+.stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+    transition: transform 0.3s ease;
+}
+
+/* 单位样式 */
+.stat-unit {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+    opacity: 0.8;
+}
+
+/* 卡片悬浮时的标签颜色变化 */
+.stat-card:nth-child(1):hover .stat-label {
+    color: #3b82f6;  /* 主蓝色 */
+}
+
+.stat-card:nth-child(2):hover .stat-label {
+    color: #2563eb;  /* 深蓝色 */
+}
+
+.stat-card:nth-child(3):hover .stat-label {
+    color: #60a5fa;  /* 浅蓝色 */
+}
+
+.stat-card:nth-child(4):hover .stat-label {
+    color: #93c5fd;  /* 最浅蓝色 */
+}
+
+/* 卡片悬浮时的数值效果 */
+.stat-card:hover .stat-number {
+    transform: scale(1.05);
+    background: linear-gradient(to right, #3b82f6, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 卡片边框效果 */
+.stat-card {
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.stat-card:hover {
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.data-list {
+    margin-top: 24px;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.list-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.data-count {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin: 0 -24px;
+    padding: 0 24px;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .time-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .record-form {
+        flex-direction: column;
+    }
+
+    .record-button {
+        width: 100%;
+    }
+
+    .heart-rate-detail {
+        padding: 16px;
+    }
+
+    .content {
+        gap: 16px;
+    }
+
+    .value {
+        font-size: 48px;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+    .stat-card {
+        min-height: 120px;
+    }
+
+    .stat-number {
+        font-size: 28px;
+    }
+
+    .table-container {
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
+}

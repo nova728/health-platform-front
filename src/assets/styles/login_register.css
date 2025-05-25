@@ -1,0 +1,199 @@
+.login-container {
+    width: 1050px;
+    height: 620px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .login-containerL {
+        width: 500px;
+        height: 620px;
+        background: url("@/assets/images/loginbgl.png") no-repeat;
+        background-size: 100% 100%;
+    }
+
+    .login-containerR {
+        width: 550px;
+        height: 620px;
+        background: url("@/assets/images/loginbgr.png") no-repeat;
+        background-size: 100% 100%;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+.login-wrap {
+    overflow: hidden;
+    height: 100vh;
+    width: 100%;
+    background: url("@/assets/images/loginbg.png") no-repeat;
+    background-size: 100% 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .loginLogo {
+        margin-left: 30px;
+        margin-top: 30px;
+        height: 10%;
+    }
+}
+
+.loginBody {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-content: flex-start;
+
+    .loginBodyCenter {
+        width: calc(100% - 280px);
+        position: relative;
+        height: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: nowrap;
+        flex-direction: column;
+        align-content: flex-start;
+        z-index: 10;
+    }
+
+    .loginBody2 {
+        width: 450px;
+        height: 491px;
+        margin-top: 15%;
+    }
+}
+
+
+.loginTitle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-content: flex-start;
+
+    p {
+        padding-top: 20px;
+        text-align: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: #fff;
+    }
+}
+
+.loginBody2Title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #3d80f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 60px;
+    padding-bottom: 40px;
+}
+
+.loginBut {
+    width: 400px;
+    height: 50px;
+    background: #3d80f4;
+    font-size: 20px;
+    border-radius: 25px;
+    font-weight: 800;
+    color: #FFFFFF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-top: 40px;
+}
+
+.info {
+    display: flex;
+    justify-content: space-between;
+    width: 400px;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .forget {
+        font-size: 14px;
+        font-weight: 500;
+        color: #3d80f4;
+    }
+
+    .toLogin{
+        font-size: 14px;
+        font-weight: 500;
+        color: #3d80f4;
+    }
+}
+
+.loginInput {
+    width: 400px;
+    height: 54px;
+    border: 1px solid #eeeeee;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+
+    .icons {
+        width: 57px;
+        display: flex;
+        justify-content: center;
+        border-right: 1px solid #eeeeee;
+
+        .icon {
+            color: #555657;
+            font-size: 20px;
+        }
+    }
+
+    input {
+        width: calc(100% - 20px);
+        margin-left: 10px;
+        height: 100%;
+        border: 0;
+        background: none;
+        font-size: 16px;
+        font-weight: 500;
+        outline: none;
+        color: #303133;
+    }
+}
+
+input::placeholder {
+    color: #666;
+}
+
+.loginBodyMain {
+    width: 86%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-content: flex-start;
+}
+
+.login14 {
+    .el-checkbox__inner {
+        border: 1px solid rgba(12, 160, 237, 1.00);
+    }
+
+    .el-checkbox__label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #3d80f4 !important;
+    }
+
+    .el-checkbox.is-checked .el-checkbox__inner {
+        background-color: #3d80f4 !important;
+        border-color: #3d80f4 !important;
+    }
+}
