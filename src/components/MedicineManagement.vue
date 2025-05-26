@@ -557,6 +557,7 @@ const fetchMedicineRecords = async () => {
     const response = await MedicineService.getUserMedicineRecords(userId.value, periodFilter.value)
     medicineRecords.value = response.data || []
   } catch (error) {
+    console.error('获取用药记录失败:', error)
     ElMessage.error('获取用药记录失败')
   } finally {
     loading.value = false
@@ -584,13 +585,18 @@ const deleteReminder = async (reminder) => {
         }
     );
 
-    await MedicineService.deleteMedicineReminder(userId.value, reminder.id);
-    ElMessage.success('删除提醒成功');
-    await fetchReminders(); // 刷新提醒列表
+    const response = await MedicineService.deleteMedicineReminder(userId.value, reminder.id);
+
+    if (response && response.code === 200) {
+      ElMessage.success('删除提醒成功');
+      await fetchReminders();
+    } else {
+      throw new Error(response?.message || '删除提醒失败');
+    }
   } catch (error) {
-    if (error !== 'cancel') { // 忽略取消操作的错误
+    if (error !== 'cancel') {
       console.error('删除提醒失败:', error);
-      ElMessage.error('删除提醒失败');
+      ElMessage.error(error.message || '删除提醒失败');
     }
   }
 };
@@ -779,6 +785,7 @@ const cancelForm = () => {
 const submitForm = async () => {
   if (!medicineFormRef.value) {
     console.warn('表单引用不存在');
+    ElMessage.error('表单初始化失败，请刷新页面重试');
     return;
   }
 
@@ -790,8 +797,10 @@ const submitForm = async () => {
 
   try {
     // 表单验证
-    console.log('开始表单验证:', medicineForm.value);
-    const valid = await medicineFormRef.value.validate();
+    const valid = await medicineFormRef.value.validate().catch(error => {
+      console.error('表单验证出错:', error);
+      return false;
+    });
 
     if (!valid) {
       ElMessage.warning('请填写必要信息');
@@ -810,48 +819,63 @@ const submitForm = async () => {
     }
 
     // 验证服用时间
-    const timings = medicineForm.value.frequencyTiming.filter(time => time);
-    if (timings.length !== parseInt(medicineForm.value.frequencyTimes)) {
-      ElMessage.warning('请填写完整的服用时间');
+    const timings = (medicineForm.value.frequencyTiming || []).filter(time => time && time.trim());
+    const expectedTimings = parseInt(medicineForm.value.frequencyTimes || '0');
+
+    if (timings.length !== expectedTimings) {
+      ElMessage.warning(`请填写完整的服用时间（需要 ${expectedTimings} 个时间）`);
       return;
     }
 
     // 构建提交数据
     const formData = {
-      id: medicineForm.value.id,
+      id: medicineForm.value.id || null,
       userId: userId.value,
-      name: medicineForm.value.name.trim(),
-      dosage: `${medicineForm.value.dosageAmount}${medicineForm.value.dosageUnit}`,
-      frequency: `每天${medicineForm.value.frequencyTimes}次,${medicineForm.value.frequencyPeriod}`,
-      frequencyTiming: medicineForm.value.frequencyTiming.filter(time => time),
-      startDate: medicineForm.value.startDate,
+      name: (medicineForm.value.name || '').trim(),
+      dosage: `${medicineForm.value.dosageAmount || 0}${medicineForm.value.dosageUnit || ''}`,
+      frequency: `每天${medicineForm.value.frequencyTimes || 1}次,${medicineForm.value.frequencyPeriod || ''}`,
+      frequencyTiming: timings,
+      startDate: medicineForm.value.startDate || null,
       endDate: medicineForm.value.endDate || null,
-      notes: medicineForm.value.notes?.trim() || '',
-      // 将 drugInfo 转换为 JSON 字符串
-      drugInfo: medicineForm.value.drugInfo ? JSON.stringify(medicineForm.value.drugInfo) : null
+      notes: (medicineForm.value.notes || '').trim(),
+      drugInfo: medicineForm.value.drugInfo ?
+          (typeof medicineForm.value.drugInfo === 'string' ?
+                  medicineForm.value.drugInfo :
+                  JSON.stringify(medicineForm.value.drugInfo)
+          ) : null
     };
 
     console.log('准备提交的数据:', formData);
 
-    // 提交数据
-    const method = isEditing.value ? 'updateMedicineRecord' : 'createMedicineRecord';
     loading.value = true;
-    const response = await MedicineService[method](userId.value, formData);
+    let response;
 
-    if (response?.code === 200) {
+    if (isEditing.value) {
+      // 修改：传递medicineId参数
+      response = await MedicineService.updateMedicineRecord(userId.value, formData.id, formData);
+    } else {
+      response = await MedicineService.createMedicineRecord(userId.value, formData);
+    }
+
+    // 检查响应 - 修改：直接检查code
+    if (response && response.code === 200) {
       ElMessage.success(isEditing.value ? '更新成功' : '添加成功');
       showAddForm.value = false;
-      await fetchMedicineRecords();
+      isEditing.value = false;
       medicineForm.value = initMedicineForm();
+      await fetchMedicineRecords();
     } else {
       throw new Error(response?.message || '操作失败');
     }
   } catch (error) {
     console.error('表单提交错误:', error);
-    if (error.response?.data) {
-      console.error('错误详情:', error.response.data);
+
+    let errorMessage = '操作失败';
+    if (error.message) {
+      errorMessage = error.message;
     }
-    ElMessage.error(error.message || (isEditing.value ? '更新失败' : '添加失败'));
+
+    ElMessage.error(errorMessage);
   } finally {
     loading.value = false;
   }
@@ -869,48 +893,55 @@ const submitReminder = async () => {
       return;
     }
 
-    // 直接使用时间字符串，因为已经在 el-time-picker 中设置了 value-format="HH:mm:ss"
     const reminderData = {
       medicineId: reminderForm.value.medicineId,
-      reminderTime: reminderForm.value.reminderTime, // 直接使用时间字符串
+      reminderTime: reminderForm.value.reminderTime,
       repeatType: reminderForm.value.repeatType.toUpperCase(),
       isActive: true
     };
 
     console.log('提交提醒数据:', reminderData);
 
-    await MedicineService.createMedicineReminder(
-        userId.value,
-        reminderData
-    );
+    const response = await MedicineService.createMedicineReminder(userId.value, reminderData);
 
-    ElMessage.success('设置提醒成功');
-    await fetchReminders();
-    showReminderForm.value = false;
-    // 重置表单
-    reminderForm.value = {
-      medicineId: null,
-      reminderTime: null,
-      repeatType: 'daily',
-      isActive: true
-    };
+    if (response && response.code === 200) {
+      ElMessage.success('设置提醒成功');
+      await fetchReminders();
+      showReminderForm.value = false;
+      reminderForm.value = {
+        medicineId: null,
+        reminderTime: null,
+        repeatType: 'daily',
+        isActive: true
+      };
+    } else {
+      throw new Error(response?.message || '设置提醒失败');
+    }
   } catch (error) {
     console.error('设置提醒失败:', error);
-    ElMessage.error('设置提醒失败');
+    ElMessage.error(error.message || '设置提醒失败');
   }
 };
 
+
 const toggleReminder = async (reminder) => {
   try {
-    await MedicineService.updateReminderStatus(
+    const response = await MedicineService.updateReminderStatus(
         userId.value,
         reminder.id,
         reminder.isActive
     )
-    ElMessage.success('更新提醒状态成功')
+
+    // 修改：检查response.code
+    if (response && response.code === 200) {
+      ElMessage.success('更新提醒状态成功')
+    } else {
+      throw new Error(response?.message || '更新提醒状态失败');
+    }
   } catch (error) {
-    reminder.isActive = !reminder.isActive
-    ElMessage.error('更新提醒状态失败')
+    reminder.isActive = !reminder.isActive // 回滚状态
+    console.error('更新提醒状态失败:', error)
+    ElMessage.error(error.message || '更新提醒状态失败')
   }
 }
 
