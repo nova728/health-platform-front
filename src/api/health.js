@@ -10,7 +10,7 @@ export const healthAPI = {
         }
 
         return request({
-            url: `/api/health/${userId}/latest`,
+            url: `http://localhost:8088/api/health/${userId}/latest`,
             method: 'get',
             // 添加错误处理
             validateStatus: function (status) {
@@ -27,7 +27,7 @@ export const healthAPI = {
     // 添加健康数据
     addHealthData(userId, data) {  // 添加 userId 参数
         return request({
-            url: `/api/health/${userId}`,  // 修改路径
+            url: `http://localhost:8088/api/health/${userId}`,  // 修改路径
             method: 'post',
             data
         })
@@ -45,7 +45,7 @@ export const healthAPI = {
         }
 
         return request({
-            url: `/api/health/${userId}/history`,
+            url: `http://localhost:8088/api/health/${userId}/history`,
             method: 'get',
             params,
             timeout: 10000, // 设置超时时间

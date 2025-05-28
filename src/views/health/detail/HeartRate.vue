@@ -205,7 +205,7 @@ const checkHeartRateWarnings = (newRate, recentData) => {
     return;
   }
 
-  if (newRate > 100) {
+  if (newRate > 120) {
     ElMessage.warning('当前心率偏高，建议放松一下');
     return;
   }
@@ -240,14 +240,14 @@ watch(selectedPeriod, (newPeriod) => {
 // 获取心率状态
 const getHeartRateStatus = (rate) => {
   if (rate < 60) return '心率偏低'
-  if (rate > 100) return '心率偏高'
+  if (rate > 120) return '心率偏高'
   return '心率正常'
 }
 
 // 获取心率状态的CSS类
 const getHeartRateClass = (rate) => {
   if (rate < 60) return 'status-low'
-  if (rate > 100) return 'status-high'
+  if (rate > 120) return 'status-high'
   return 'status-normal'
 }
 
@@ -313,7 +313,7 @@ const recordHeartRate = async () => {
 const heartRateStatus = computed(() => {
   const rate = latestHeartRate.value
   if (rate < 60) return { text: '心率偏低', class: 'low' }
-  if (rate > 100) return { text: '心率偏高', class: 'high' }
+  if (rate > 120) return { text: '心率偏高', class: 'high' }
   return { text: '心率正常', class: 'normal' }
 })
 
