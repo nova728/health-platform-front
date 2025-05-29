@@ -13,20 +13,18 @@
     >
       <bot-icon class="bubble-icon"/>
     </div>
-
     <el-dialog
         v-model="showBot"
-        title="健康助手"
         width="800px"
         class="bot-dialog"
         :close-on-click-modal="false"
-        :show-close="true"
+        :show-close="false"
         :modal="true"
         :append-to-body="true"
         destroy-on-close
-    >
+    >      
       <div class="bot-container">
-        <Bot />
+        <Bot @close="showBot = false" />
       </div>
     </el-dialog>
   </div>
@@ -48,7 +46,6 @@ let isDragging = false
 let startPos = { x: 0, y: 0 }
 let startOffset = { x: 0, y: 0 }
 
-// Drag handlers
 const startDrag = (e) => {
   if (e.button !== 0) return
   isDragging = true
@@ -184,15 +181,18 @@ onBeforeUnmount(() => {
 :deep(.bot-dialog) {
   border-radius: 16px;
   overflow: hidden;
+  background: transparent !important;
+}
+
+:deep(.bot-dialog .el-dialog) {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 :deep(.bot-dialog .el-dialog__header) {
-  margin: 0;
-  padding: 16px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
+  display: none !important;
 }
-
 
 :deep(.bot-dialog .el-dialog__body) {
   padding: 0;
@@ -225,12 +225,13 @@ onBeforeUnmount(() => {
   }
 }
 
-:deep(.bot-dialog .el-dialog__headerbtn) {
-  top: 16px;
+:deep(.bot-dialog) {
+  min-width: 600px;
 }
 
-:deep(.bot-dialog .el-dialog) {
-  min-width: 600px;
+/* 设置遮罩层透明 */
+:deep(.el-overlay) {
+  background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 </style>

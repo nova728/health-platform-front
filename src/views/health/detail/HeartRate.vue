@@ -217,16 +217,15 @@ const checkHeartRateWarnings = (newRate, recentData) => {
   if (rateChange > 20) {
     ElMessage.warning(`心率变化幅度较大 (${rateChange} BPM)，请注意身体状况`);
   }
-
   // 检查连续异常记录
   let consecutiveAbnormal = 0;
   for (let i = 0; i < Math.min(3, recentData.length); i++) {
-    if (recentData[i].value < 60 || recentData[i].value > 100) {
+    if (recentData[i].value < 60 || recentData[i].value > 120) {
       consecutiveAbnormal++;
     }
   }
 
-  if (consecutiveAbnormal >= 2 && (newRate < 60 || newRate > 100)) {
+  if (consecutiveAbnormal >= 2 && (newRate < 60 || newRate > 120)) {
     ElMessage.warning('检测到连续异常心率记录，请注意身体状况');
   }
 };
@@ -283,9 +282,7 @@ const recordHeartRate = async () => {
     if (!userId) {
       console.error('User ID not found')
       return
-    }
-
-    isRecording.value = true
+    }    isRecording.value = true
     const response = await axios.post(
         `http://localhost:8088/api/health/${userId}/heart-rate`,
         {
@@ -295,10 +292,11 @@ const recordHeartRate = async () => {
     )
 
     if (response.data) {
+      const recordedHeartRate = Number(newHeartRate.value); // 先保存心率值
       newHeartRate.value = ''
       await fetchHeartRateData(selectedPeriod.value)
       ElMessage.success('心率记录成功')
-      checkHeartRateWarnings(Number(newHeartRate.value), heartRateHistory.value);
+      checkHeartRateWarnings(recordedHeartRate, heartRateHistory.value);
       showRecordModal.value = false  // 成功后关闭模态框
     }
   } catch (error) {
