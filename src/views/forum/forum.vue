@@ -68,14 +68,20 @@
                     class="post-card"
                     @click="viewPost(post.id)"
                     @mouseenter="handlePostHover(post.id)"
-                >
-                  <!-- 文章头部信息 -->
+                >                  <!-- 文章头部信息 -->
                   <div class="post-header">
-                    <el-avatar :size="40" :src="post.author?.avatar" />
+                    <el-avatar 
+                        :size="40" 
+                        :src="post.author?.avatar" 
+                        class="clickable-avatar"
+                        @click.stop="viewUserProfile(post.author?.id)"
+                    />
                     <div class="post-info">
                       <div class="post-title">{{ post.title }}</div>
                       <div class="post-meta">
-                        <span>{{ post.author?.username }}</span>
+                        <span class="clickable-username" @click.stop="viewUserProfile(post.author?.id)">
+                          {{ post.author?.username }}
+                        </span>
                         <span>{{ formatDate(post.createdAt) }}</span>
                         <span>{{ getCategoryName(post.categoryId) }}</span>
                         <span v-if="post.visibility === 'private'" class="private-tag">
@@ -160,11 +166,95 @@
             <!-- 加载完成提示 -->
             <div v-if="noMoreData" class="no-more">
               没有更多内容了
+            </div>        </div>
+      </div>
+    </div>
+
+    <!-- 用户资料弹窗 -->
+    <el-dialog
+        v-model="userProfileVisible"
+        :title="userProfile.username ? `${userProfile.username} 的个人资料` : '用户资料'"
+        width="500px"
+        :close-on-click-modal="true"
+        destroy-on-close
+    >
+      <div class="user-profile-content" v-loading="profileLoading">
+        <div v-if="!profileLoading && userProfile.id" class="profile-info">
+          <!-- 用户基本信息 -->
+          <div class="profile-header">
+            <el-avatar :size="80" :src="userProfile.avatar" class="profile-avatar">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+            <div class="profile-basic">
+              <h3>{{ userProfile.username }}</h3>
+              <p v-if="userProfile.settings?.profileVisibility === 'public' && userProfile.email" class="profile-email">
+                <el-icon><Message /></el-icon>
+                {{ userProfile.email }}
+              </p>
+              <p v-if="userProfile.settings?.profileVisibility === 'public' && userProfile.phone" class="profile-phone">
+                <el-icon><Phone /></el-icon>
+                {{ userProfile.phone }}
+              </p>
+              <p v-if="userProfile.settings?.profileVisibility === 'public' && userProfile.address" class="profile-address">
+                <el-icon><Location /></el-icon>
+                {{ userProfile.address }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 隐私提示 -->
+          <div v-if="userProfile.settings?.profileVisibility === 'private'" class="privacy-notice">
+            <el-icon><Lock /></el-icon>
+            该用户设置了隐私保护，部分信息不对外公开
+          </div>
+
+          <!-- 运动数据 -->
+          <div v-if="userProfile.settings?.exerciseVisibility === 'public'" class="exercise-section">
+            <h4><el-icon><Sunny /></el-icon> 运动数据</h4>
+            <div v-if="userProfile.exerciseData" class="exercise-stats">
+              <div class="stat-item">
+                <span class="stat-label">总运动次数</span>
+                <span class="stat-value">{{ userProfile.exerciseData.totalWorkouts || 0 }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">总运动时长</span>
+                <span class="stat-value">{{ userProfile.exerciseData.totalMinutes || 0 }} 分钟</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">最近活动</span>
+                <span class="stat-value">{{ userProfile.exerciseData.lastActivity || '暂无记录' }}</span>
+              </div>
+            </div>
+            <div v-else class="no-data">暂无运动数据</div>
+          </div>
+
+          <!-- 论坛统计 -->
+          <div class="forum-stats">
+            <h4><el-icon><ChatDotRound /></el-icon> 论坛统计</h4>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">发布文章</span>
+                <span class="stat-value">{{ userProfile.articleCount || 0 }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">获得点赞</span>
+                <span class="stat-value">{{ userProfile.totalLikes || 0 }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">加入时间</span>
+                <span class="stat-value">{{ formatJoinDate(userProfile.createTime) }}</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <div v-else-if="!profileLoading" class="no-user">
+          <el-icon><WarningFilled /></el-icon>
+          <p>用户信息不存在</p>
+        </div>
       </div>
-    </div>
+    </el-dialog>
+  </div>
   </div>
 </template>
 
@@ -176,20 +266,24 @@ import { useForumStore } from '@/store/forumStore.js'
 import {
   Search,
   Plus,
-  ChatDotRound,
-  QuestionFilled,
+  ChatDotRound,  QuestionFilled,
   WarningFilled,
   Lock,
   Collection,
   ChatDotSquare, PictureFilled,
   List,
-  Medal
+  Medal,
+  User,
+  Message,
+  Phone,
+  Location
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { debounce } from 'lodash'
 import { useStore } from 'vuex'
+import axios from 'axios'
 import {
   Sun as Sunny,
   Eye as View,
@@ -215,6 +309,11 @@ const hotArticles = ref([])
 const activeTab = ref('normal')
 const isLoadingHot = ref(false);
 const hotArticlesError = ref('')
+
+// 用户资料弹窗相关
+const userProfileVisible = ref(false)
+const userProfile = ref({})
+const profileLoading = ref(false)
 
 const preloadPost = (postId) => {
   const link = document.createElement('link')
@@ -358,6 +457,77 @@ const handleSearch = debounce(() => {
 // 格式化日期
 const formatDate = (date) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
+}
+
+// 格式化加入时间
+const formatJoinDate = (date) => {
+  return dayjs(date).format('YYYY年MM月')
+}
+
+// 查看用户资料
+const viewUserProfile = async (userId) => {
+  if (!userId) {
+    ElMessage.warning('用户信息不存在')
+    return
+  }
+
+  userProfileVisible.value = true
+  profileLoading.value = true
+  
+  try {
+    // 获取用户基本信息和设置
+    const [userResponse, settingsResponse, statsResponse] = await Promise.all([
+      axios.get(`http://localhost:8088/api/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }),
+      axios.get(`http://localhost:8088/api/settings/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }),
+      axios.get(`http://localhost:8088/api/users/${userId}/stats`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+    ])
+
+    if (userResponse.data.code === 200) {
+      userProfile.value = {
+        ...userResponse.data.data,
+        settings: settingsResponse.data.code === 200 ? settingsResponse.data.data : {},
+        ...( statsResponse.data.code === 200 ? statsResponse.data.data : {})
+      }
+
+      // 根据隐私设置获取运动数据
+      if (userProfile.value.settings?.exerciseVisibility === 'public') {
+        try {
+          const exerciseResponse = await axios.get(`http://localhost:8088/api/users/${userId}/exercise`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          })
+          if (exerciseResponse.data.code === 200) {
+            userProfile.value.exerciseData = exerciseResponse.data.data
+            //console.log(exerciseResponse.data.data)
+          }
+        } catch (error) {
+          console.warn('获取运动数据失败:', error)
+        }
+      }
+    } else {
+      ElMessage.error('获取用户信息失败')
+      userProfile.value = {}
+    }
+  } catch (error) {
+    console.error('获取用户资料失败:', error)
+    ElMessage.error('获取用户资料失败')
+    userProfile.value = {}
+  } finally {
+    profileLoading.value = false
+  }
 }
 
 // 获取分类名称
@@ -788,5 +958,132 @@ onMounted(() => {
 
 .posts-list::-webkit-scrollbar-track {
   background-color: #f5f7fa;
+}
+
+/* 用户资料弹窗样式 */
+.clickable-avatar {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.clickable-avatar:hover {
+  transform: scale(1.05);
+}
+
+.clickable-username {
+  cursor: pointer;
+  color: #409eff;
+  transition: color 0.2s ease;
+}
+
+.clickable-username:hover {
+  color: #66b1ff;
+  text-decoration: underline;
+}
+
+.user-profile-content {
+  min-height: 200px;
+}
+
+.profile-header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+}
+
+.profile-basic h3 {
+  margin: 0 0 12px 0;
+  color: #303133;
+  font-size: 20px;
+}
+
+.profile-basic p {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.privacy-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #fdf6ec;
+  border: 1px solid #faecd8;
+  border-radius: 4px;
+  color: #e6a23c;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.exercise-section,
+.forum-stats {
+  margin-bottom: 24px;
+}
+
+.exercise-section h4,
+.forum-stats h4 {
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #303133;
+  font-size: 16px;
+}
+
+.exercise-stats,
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.no-data,
+.no-user {
+  text-align: center;
+  padding: 40px;
+  color: #909399;
+}
+
+.no-user {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.no-user .el-icon {
+  font-size: 48px;
+  color: #dcdfe6;
 }
 </style>
