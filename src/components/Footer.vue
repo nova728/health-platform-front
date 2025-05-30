@@ -9,15 +9,15 @@
         <div class="footer-links">
           <div class="link-group">
             <h4>关于我们</h4>
-            <a href="#">平台介绍</a>
-            <a href="#">服务协议</a>
-            <a href="#">隐私政策</a>
+            <router-link to="/web-introduction">平台介绍</router-link>
+            <router-link to="/service-agreement">服务协议</router-link>
+            <router-link to="/privacy-policy">隐私政策</router-link>
           </div>
           <div class="link-group">
             <h4>帮助中心</h4>
-            <a href="#">使用指南</a>
-            <a href="#">常见问题</a>
-            <a href="#">联系我们</a>
+            <router-link to="/usage-guide">使用指南</router-link>
+            <router-link to="/frequent-question">常见问题</router-link>
+            <a href="javascript:void(0)" @click="showContact=true">联系我们</a>
           </div>
         </div>
       </div>
@@ -33,10 +33,22 @@
       </div>
     </div>
   </div>
+  <!-- 联系我们弹窗 -->
+  <el-dialog v-model="showContact" title="联系我们" width="400px" center>
+    <p>📞 电话：400-123-4567</p>
+    <p>✉️ 邮箱：contact@healthlife.com</p>
+    <template #footer>
+      <el-button type="primary" @click="showContact=false">知道了</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 // 版权信息直接写在模板中,更容易维护
+
+import {ref} from 'vue'
+import {ElDialog,ElButton} from 'element-plus'
+const showContact = ref(false)
 </script>
 
 <style scoped>

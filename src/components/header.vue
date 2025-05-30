@@ -1,16 +1,22 @@
 <template>
-  <el-menu
-      :default-active="activeIndex"
-      class="el-menu-demo"
-      mode="horizontal"
-      :ellipsis="false"
-      @select="handleSelect"
-  >
-    <el-menu-item index="0" class="logo-container">
-      <img class="logo" src="/src/assets/images/logo.png" alt="Element logo" />
-    </el-menu-item>
+  <header class="navbar-container">
+    <el-menu
+        :default-active="activeIndex"
+        class="el-menu-demo"
+        mode="horizontal"
+        :ellipsis="false"
+        @select="handleSelect"
+    >
+      <!-- 左侧 logo，只是图片格式 -->
+      <div class="logo-container">
+        <img class="logo" src="/src/assets/images/logo.png" alt="Element logo" />
+      </div>
+      <!-- 左侧 Logo
+      <el-menu-item index="0" class="logo-container">
+        <img class="logo" src="/src/assets/images/logo.png" alt="Element logo" />
+      </el-menu-item>-->
 
-    <div class="menu-items-left">
+      <!-- 中间导航项 -->
       <el-menu-item
           v-for="item in menuItems"
           :key="item.index"
@@ -20,9 +26,10 @@
       >
         {{ item.label }}
       </el-menu-item>
-    </div>
 
-    <div class="menu-items-right">
+      <div class="spacer"></div>
+
+      <!-- 右侧用户相关 -->
       <template v-if="!isLoggedIn">
         <el-menu-item
             v-for="item in authItems"
@@ -36,7 +43,7 @@
       </template>
 
       <template v-else>
-        <!-- 排行榜入口 -->
+        <!-- 排行榜 -->
         <el-menu-item index="rank" @click="navigateTo('ExerciseCompetition')" class="rank-item">
           <el-button type="primary" class="rank-button">
             <el-icon><Trophy /></el-icon>
@@ -44,6 +51,7 @@
           </el-button>
         </el-menu-item>
 
+        <!-- 通知 -->
         <el-menu-item index="notification" class="notification-item">
           <el-popover
               placement="bottom-end"
@@ -56,7 +64,7 @@
                 <Bell class="notification-icon" />
               </el-badge>
             </template>
-
+            <!-- 通知内容保持不变 -->
             <div class="notification-container">
               <div class="notification-header">
                 <span>通知</span>
@@ -84,19 +92,14 @@
           </el-popover>
         </el-menu-item>
 
+        <!-- 用户菜单 -->
         <el-sub-menu index="user" class="user-menu">
           <template #title>
             <div class="user-info">
-              <img
-                  :src="userAvatar"
-                  :alt="userName"
-                  class="avatar"
-                  @error="handleAvatarError"
-              />
+              <img :src="userAvatar" :alt="userName" class="avatar" @error="handleAvatarError" />
               <span class="user-name">{{ userName }}</span>
             </div>
           </template>
-
           <el-menu-item
               v-for="item in userMenuItems"
               :key="item.index"
@@ -109,9 +112,10 @@
           </el-menu-item>
         </el-sub-menu>
       </template>
-    </div>
-  </el-menu>
+    </el-menu>
+  </header>
 </template>
+
 
 <script setup>
 import { ref, inject,computed,onMounted, onBeforeUnmount } from 'vue';
@@ -276,8 +280,9 @@ onBeforeUnmount(() => {
 
 const menuItems = [
   {index: '0', label: '首页', route: 'Home' },
-  { index: '5', label: '健康中心', route: 'HealthCenter' },
-  { index: '6', label: '论坛', route: 'Forum' }
+  {index: '5', label: '健康中心', route: 'HealthCenter' },
+  {index: '6', label: '论坛', route: 'Forum' },
+  {index:'7',label: '网站开发者',route: 'WebDevelopers'}
 ];
 
 const authItems = [
@@ -361,19 +366,6 @@ const handleSelect = (key, keyPath) => console.log(key, keyPath);
   transform: scale(1.05);
 }
 
-/* Menu items styles */
-.menu-items-left {
-  display: flex;
-  margin-right: auto;
-  gap: 10px;
-}
-
-.menu-items-right {
-  display: flex;
-  align-items: center;
-  margin-right: 20px;
-  gap: 8px; /* Add gap between items */
-}
 
 .menu-item-animated {
   font-size: 16px;
@@ -578,4 +570,59 @@ const handleSelect = (key, keyPath) => console.log(key, keyPath);
   height: 18px;
   opacity: 0.8;
 }
+.navbar-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.el-menu-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0 16px;
+  height: auto;
+  min-height: 64px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+/* 间隔撑开左右内容 */
+.spacer {
+  flex-grow: 1;
+}
+
+/* 响应式菜单字体和按钮缩放 */
+@media (max-width: 768px) {
+  .logo {
+    width: 70px;
+  }
+
+  .menu-item-animated,
+  .auth-item,
+  .user-name,
+  .rank-button span {
+    font-size: 12px;
+  }
+
+  .rank-button {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .user-info {
+    gap: 4px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* 强制菜单项不换行内容溢出隐藏 */
+.el-menu-item {
+  white-space: nowrap;
+}
+
+
 </style>

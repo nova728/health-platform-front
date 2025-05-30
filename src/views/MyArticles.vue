@@ -2,6 +2,14 @@
   <div class="my-articles">
     <el-tabs v-model="activeTab" class="article-tabs">
       <el-tab-pane label="已发布" name="published">
+        <!--排序控件-->
+        <el-row justify="end" style="margin-bottom: 12px;">
+          <el-select v-model="sortKey" placeholder="排序方式" size="small" @change="sortPublishedArticles">
+            <el-option label="按浏览量排序" value="viewCount" />
+            <el-option label="按收藏量排序" value="likeCount" />
+            <el-option label="按评论量排序" value="commentCount" />
+          </el-select>
+        </el-row>
         <!-- 已发布文章列表 -->
         <div v-if="loading" class="loading-state">
           <el-skeleton :rows="3" animated />
@@ -17,7 +25,11 @@
                  :key="article.id"
                  class="article-item">
               <div class="article-content">
+                <!--用户头像加标题-->
+                <div class="article-header">
+                  <img :src="userAvatar" class="user-avatar" alt="用户头像" />
                 <h3>{{ article.title }}</h3>
+                </div>
                 <p class="article-excerpt">{{ article.content }}</p>
                 <div class="article-meta">
                   <span>
@@ -109,7 +121,8 @@ const activeTab = ref('published');
 const loading = ref(false);
 const publishedArticles = ref([]);
 const draftArticles = ref([]);
-
+//头像
+const userAvatar = computed(() => store.state.user.avatar);
 // 获取当前用户ID
 const userId = computed(() => store.state.user.id);
 
@@ -121,6 +134,7 @@ const fetchArticles = async () => {
     const articles = response.data.data;
     publishedArticles.value = articles.published || [];
     draftArticles.value = articles.drafts || [];
+    sortPublishedArticles(); // 加上这行自动按当前排序方式排序
   } catch (error) {
     ElMessage.error('获取文章列表失败');
   } finally {
@@ -179,10 +193,12 @@ const createNewArticle = () => {
 // 格式化日期
 const formatDate = (date) => {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('zh-CN', {
+  return new Date(date).toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 };
 
@@ -193,6 +209,16 @@ onMounted(() => {
     router.push('/login');
   }
 });
+
+ /* 排序相关 */
+const sortKey = ref(''); // 默认不排序
+const sortPublishedArticles = () => {
+  if (!sortKey.value) return;
+  publishedArticles.value.sort((a, b) => {
+    return (b[sortKey.value] || 0) - (a[sortKey.value] || 0);
+  });
+};
+
 </script>
 
 <style scoped>
@@ -347,5 +373,20 @@ onMounted(() => {
 
 .el-button + .el-button {
   margin-left: 0;
+}
+
+/* 头像样式 */
+.article-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 </style>

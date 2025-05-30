@@ -72,6 +72,7 @@
     </section>
 
     <Footer />
+
   </div>
 </template>
 
@@ -92,7 +93,6 @@ import HotRanking from '@/components/HotRanking.vue'
 import Footer from '@/components/Footer.vue'
 import axios from 'axios'
 import {ElMessage} from 'element-plus'
-
 
 const router = useRouter()
 const loading = ref(true)

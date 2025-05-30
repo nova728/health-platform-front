@@ -145,6 +145,6 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow-y: auto !important;
 }
 </style>
