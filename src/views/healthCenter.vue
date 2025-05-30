@@ -91,7 +91,7 @@ const handleSelect = async (key) => {
   box-shadow: none;
 }
 .health-center-container {
-  height: 100%;
+  height: 100vh;
   padding: 20px 40px;
   background-color: #f5f7fa;
   box-sizing: border-box;
@@ -100,7 +100,7 @@ const handleSelect = async (key) => {
 
 .health-center {
   display: flex;
-  height: 100%;
+  height: calc(100vh - 40px);
   width: 100%;
   background-color: #f5f7fa;
   border-radius: 8px;
@@ -131,9 +131,9 @@ const handleSelect = async (key) => {
 
 .content-area {
   flex: 1;
-  padding: 24px;
+  padding: 0;
   background-color: white;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
 }
 

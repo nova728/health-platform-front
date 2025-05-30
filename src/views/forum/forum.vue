@@ -5,9 +5,8 @@
       <div class="forum-header">
         <el-input
             v-model="searchText"
-            placeholder="搜索文章..."
+            placeholder="🔍 搜索文章..."
             class="search-input"
-            :prefix-icon="Search"
             @input="handleSearch"
         />
         <el-button type="primary" @click="navigateToEditor">
@@ -124,12 +123,6 @@
                     </span>
                     <span>
                       <el-icon><ChatDotSquare /></el-icon> {{ post.commentCount }}
-                    </span>
-                    <span
-                        @click.stop="handleLike(post)"
-                        :class="{ 'active': post.isLiked }"
-                    >
-                      <el-icon><Star /></el-icon> {{ post.likeCount }}
                     </span>
                     <span
                         @click.stop="handleFavorite(post)"
@@ -587,23 +580,38 @@ const handleFavorite = async (post) => {
       return
     }
 
-    const url = `http://localhost:8088/api/articles/${post.id}/favorite`
+    const userId = store.state.user.id; // 获取 userId
+    if (!userId) {
+      ElMessage.warning('无法获取用户信息，请重新登录');
+      return;
+    }
+    const url = `http://localhost:8088/api/articles/${userId}/${post.id}/favorite`;
     const method = post.isFavorited ? 'DELETE' : 'POST'
 
     const response = await fetch(url, {
       method,
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json' // 明确指定Content-Type
       }
     })
 
-    if (!response.ok) throw new Error('操作失败')
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // no-op
+      }
+      console.error('Favorite operation failed response:', response);
+      throw new Error(errorData?.message || `操作失败，状态码: ${response.status}`);
+    }
 
     post.isFavorited = !post.isFavorited
     ElMessage.success(post.isFavorited ? '收藏成功' : '已取消收藏')
   } catch (error) {
     console.error('收藏操作失败:', error)
-    ElMessage.error('操作失败')
+    ElMessage.error(error.message || '操作失败')
   }
 }
 
