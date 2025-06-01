@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
 import { getLatestReport } from '@/api/healthReport'

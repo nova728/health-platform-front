@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ArticleDetail from "@/views/forum/ArticleDetail.vue";
+import WebIntroduction  from "@/views/WebIntroduction.vue";
+import PrivacyPolicy from '@/views/PrivacyPolicy.vue';
 
 const routes = [
     {
@@ -18,9 +20,9 @@ const routes = [
         component: () => import('../views/Register.vue')
     },
     {
-      path: '/home',
-      name: 'Home',
-      component: () => import('../views/Home.vue')
+        path: '/home',
+        name: 'Home',
+        component: () => import('../views/Home.vue')
     },
     {
         path:'/editInformation',
@@ -34,7 +36,7 @@ const routes = [
     },
     {
         path: '/editor/:id?',
-        name: 'EditArticle',
+        name: 'CreateArticle',
         component: () => import('../views/forum/ArticleEditor.vue'),
         props: true
     },
@@ -44,9 +46,9 @@ const routes = [
         component: () => import('../views/forum/ArticleEditor.vue')
     },
     {
-      path: '/setting',
-      name: 'Setting',
-      component: () => import('../views/setting.vue')
+        path: '/setting',
+        name: 'Setting',
+        component: () => import('../views/setting.vue')
     },
     {
         path: '/exercise-competition',
@@ -144,6 +146,40 @@ const routes = [
         path: '/my-favorites',
         name: 'MyFavorites',
         component: () => import('../views/MyFavorites.vue')
+    },
+    /*平台介绍*/
+    {
+        path: '/web-introduction',
+        name: 'WebIntroduction',
+        component: WebIntroduction
+    },
+    /*网站开发者*/
+    {
+        path:'/web-developers',
+        name:'WebDevelopers',
+        component: () => import('../views/WebDevelopers.vue')
+    },
+    /*服务协议*/
+    {
+        path: '/service-agreement',
+        name: 'ServiceAgreement',
+        component: () => import('@/views/ServiceAgreement.vue')
+    },
+    /*隐私政策*/
+    {
+        path: '/privacy-policy',
+        name: 'PrivacyPolicy',
+        component: PrivacyPolicy
+    },
+    {
+        path:'/frequent-question',
+        name:'FrequentQuestion',
+        component: () => import('../views/FrequentQuestion.vue')
+    },
+    {
+        path:'/usage-guide',
+        name:'UsageGuide',
+        component: () => import('../views/UsageGuide.vue')
     }
 ]
 

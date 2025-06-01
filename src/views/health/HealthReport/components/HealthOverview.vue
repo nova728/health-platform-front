@@ -37,11 +37,10 @@
             </div>
 
             <!-- 健康指标快览 -->
-            <div class="quick-stats">
-              <div class="stat-item">
+            <div class="quick-stats">              <div class="stat-item">
                 <el-icon class="stat-icon"><Aim /></el-icon>
                 <span class="stat-label">BMI</span>
-                <span class="stat-value">{{ report?.bmi || '--' }}</span>
+                <span class="stat-value">{{ report?.bmi ? report.bmi.toFixed(1) : '--' }}</span>
               </div>
               <div class="stat-item">
                 <el-icon class="stat-icon"><Timer /></el-icon>

@@ -1,6 +1,15 @@
-<template>
-  <div class="health-data">
-    <h2>健康数据</h2>
+<template>  <div class="health-data">
+    <!-- 头部横幅区域 -->
+    <div class="header-banner">
+      <div class="banner-content">
+        <div class="banner-text">
+          <h1 class="page-title">
+            📊健康数据
+          </h1>
+        </div>
+      </div>
+    </div>
+    
     <div class="data-grid">
       <!-- 心率模块 -->
       <div class="data-card large" @click="navigateTo('heart-rate')">
@@ -372,23 +381,46 @@ const navigateTo = (route) => {
   height: 100%;
   overflow-y: auto;
   box-sizing: border-box;
-  padding: 24px;
+  padding: 0;
   background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
 }
 
-.health-data h2 {
-  font-size: 32px;
+/* 头部横幅样式 */
+.header-banner {
+  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  color: white;
+  padding: 10px 10px 25px;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-text .page-title {
+  font-size: 2.5rem;
+  margin: 0 0 12px;
   font-weight: 700;
-  color: #1a1f36;
-  margin-bottom: 24px;
-  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .data-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  padding: 4px;
+  padding: 24px;
+  margin-top: 20px;
   min-height: min-content;
 }
 
@@ -685,12 +717,24 @@ const navigateTo = (route) => {
 
 @media (max-width: 768px) {
   .health-data {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .banner-content {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    padding: 0 15px;
+  }
+
+  .banner-text .page-title {
+    font-size: 2rem;
   }
 
   .data-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+    padding: 16px;
   }
 
   .data-card.large,
@@ -704,11 +748,6 @@ const navigateTo = (route) => {
 
   .card-content {
     min-height: auto;
-  }
-
-  .health-data h2 {
-    font-size: 24px;
-    margin-bottom: 16px;
   }
 }
 </style>

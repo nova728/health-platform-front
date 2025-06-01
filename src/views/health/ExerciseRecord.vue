@@ -1,14 +1,22 @@
 <template>
-  <div class="exercise-record">
-    <div class="page-header">
-      <h2>运动记录</h2>
-      <div class="header-actions">
-        <el-button type="primary" @click="showGoalSettingDialog">
-          <el-icon><Setting /></el-icon>目标设置
-        </el-button>
-        <el-button type="primary" @click="addRecord">
-          <el-icon><Plus /></el-icon>添加记录
-        </el-button>
+  <div class="exercise-record">    <!-- 头部横幅区域 -->
+    <div class="header-banner">
+      <div class="banner-content">
+        <div class="banner-text">
+          <h1 class="page-title">
+            🏃‍♂️运动记录
+          </h1>
+        </div>
+        <div class="banner-actions">
+          <el-button type="primary" size="large" @click="showGoalSettingDialog" class="action-button">
+            <el-icon><Setting /></el-icon>
+            目标设置
+          </el-button>
+          <el-button type="primary" size="large" @click="addRecord" class="action-button">
+            <el-icon><Plus /></el-icon>
+            添加记录
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -314,7 +322,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Setting } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { InfoFilled } from '@element-plus/icons-vue'
 
@@ -792,6 +800,7 @@ onMounted(async () => {
 
 .stat-value .number {
   background: linear-gradient(45deg, #409EFF, #67C23A);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   transition: all 0.3s;
@@ -821,23 +830,68 @@ onMounted(async () => {
 }
 
 .exercise-record {
-  padding: 20px;
+  /* padding: 20px; */
   height: 100%;
   overflow-y: auto;
 }
 
-.page-header {
+/* 头部横幅样式 */
+.header-banner {
+  background: linear-gradient(135deg, #67C23A 0%, #85CE61 100%);
+  color: white;
+  padding: 10px 10px 25px;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.banner-text .page-title {
+  font-size: 2.5rem;
+  margin: 0 0 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.banner-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.action-button {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: 25px;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.action-button:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
 .overview-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  margin-bottom: 30px;
+  margin: 20px 8px 30px;
 }
 
 .stat-card {
@@ -886,6 +940,7 @@ onMounted(async () => {
 .record-section {
   background: white;
   padding: 20px;
+  margin: 8px;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
@@ -939,6 +994,26 @@ onMounted(async () => {
 
   .exercise-record {
     padding: 10px;
+  }
+
+  .banner-content {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    padding: 0 15px;
+  }
+
+  .banner-text .page-title {
+    font-size: 2rem;
+  }
+
+  .banner-actions {
+    justify-content: center;
+  }
+
+  .action-button {
+    padding: 12px 24px;
+    font-size: 14px;
   }
 }
 </style>

@@ -5,8 +5,7 @@
       <div class="banner-content">
         <div class="banner-text">
           <h1 class="page-title">
-            <el-icon class="title-icon"><House /></el-icon>
-            药品管理中心
+            💊药品管理中心
           </h1>
         </div>
         <div class="banner-actions">
@@ -146,24 +145,9 @@
                       <span class="date-separator">至</span>
                       {{ record.endDate || '持续服用中' }}
                     </span>
-                  </div>
-
-                  <div v-if="record.notes" class="notes-section">
+                  </div>                  <div v-if="record.notes" class="notes-section">
                     <el-icon class="notes-icon"><Document /></el-icon>
                     <p class="notes-text">{{ record.notes }}</p>
-                  </div>
-                </div>
-
-                <div class="record-footer">
-                  <div class="action-buttons">
-                    <el-button type="primary" size="small" @click="showMedicineDetails(record)" class="detail-btn">
-                      <el-icon><View /></el-icon>
-                      详情
-                    </el-button>
-                    <el-button type="success" size="small" @click="setReminder(record.id)" class="reminder-btn">
-                      <el-icon><Bell /></el-icon>
-                      提醒
-                    </el-button>
                   </div>
                 </div>
               </div>
@@ -1216,7 +1200,7 @@ watch(() => medicineForm.value.frequencyTimes, (newVal) => {
 .header-banner {
   background: linear-gradient(135deg, #b4b5f8 0%, #c3aef4 100%);
   color: white;
-  padding: 20px 10px 60px;
+  padding: 10px 10px 45px;
   position: relative;
   overflow: hidden;
 }
@@ -1240,14 +1224,6 @@ watch(() => medicineForm.value.frequencyTimes, (newVal) => {
   align-items: center;
   gap: 16px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.title-icon {
-  font-size: 2rem;
-  background: rgba(255,255,255,0.2);
-  padding: 6px;
-  border-radius: 50%;
-  backdrop-filter: blur(10px);
 }
 
 .page-subtitle {
@@ -1618,32 +1594,6 @@ watch(() => medicineForm.value.frequencyTimes, (newVal) => {
   color: #0c4a6e;
   margin: 0;
   line-height: 1.4;
-}
-
-.record-footer {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 16px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.detail-btn,
-.reminder-btn {
-  border-radius: 8px;
-  font-size: 12px;
-  padding: 6px 12px;
-  transition: all 0.2s ease;
-}
-
-.detail-btn:hover {
-  transform: scale(1.05);
-}
-
-.reminder-btn:hover {
-  transform: scale(1.05);
 }
 
 /* 提醒卡片样式 */

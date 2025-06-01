@@ -107,7 +107,7 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 0;
+  //padding: 20px 0;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
