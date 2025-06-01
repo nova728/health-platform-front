@@ -8,132 +8,144 @@
       </h2>
     </div>
 
-    <!-- 用户运动概览 -->
-    <el-row :gutter="20" class="stats-overview">
+    <!-- 主体布局：左右结构 -->
+    <el-row :gutter="20">
+      <!-- 左侧卡片（1/3） -->
       <el-col :span="8">
-        <el-card class="stats-card blue-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon><Timer /></el-icon>
-              <span>本周运动时长</span>
-            </div>
-          </template>
-          <div class="score">{{ weeklyStats.totalDuration || 0 }}h</div>
-          <div class="rank-info">当前排名: 第{{ userRank }}名</div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="stats-card purple-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon><Medal /></el-icon>
-              <span>解锁成就</span>
-            </div>
-          </template>
-          <div class="achievements">{{ unlockedCount }}/{{ totalAchievements }}</div>
-          <el-progress
-              :percentage="(unlockedCount/totalAchievements)*100"
+        <div class="card-stack">
+          <el-card class="stats-card blue-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <el-icon><Timer /></el-icon>
+                <span>本周运动时长</span>
+              </div>
+            </template>
+            <div class="score">{{ (weeklyStats.totalDuration || 0).toFixed(1) }}h</div>
+            <div class="rank-info">当前排名: 第{{ userRank }}名</div>
+          </el-card>
+
+          <el-card class="stats-card purple-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <el-icon><Medal /></el-icon>
+                <span>解锁成就</span>
+              </div>
+            </template>
+            <div class="achievements">{{ unlockedCount }}/{{ totalAchievements }}</div>
+            <el-progress
+              :percentage="(unlockedCount / totalAchievements) * 100"
               :stroke-width="10"
               class="custom-progress"
-          />
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="stats-card green-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon><Aim /></el-icon>
-              <span>目标完成率</span>
-            </div>
-          </template>
-          <div class="goals-completed">{{ completionRate }}%</div>
-          <el-progress :percentage="completionRate" status="success" />
-        </el-card>
-      </el-col>
-    </el-row>
+            />
+          </el-card>
 
-    <!-- 运动排行榜和成就列表 -->
-    <el-row :gutter="20" class="main-content">
+          <el-card class="stats-card green-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <el-icon><Aim /></el-icon>
+                <span>目标完成率</span>
+              </div>
+            </template>
+            <div class="goals-completed">{{ completionRate }}%</div>
+            <el-progress :percentage="completionRate" status="success" />
+          </el-card>
+        </div>
+      </el-col>
+
+      <!-- 右侧内容（2/3） -->
       <el-col :span="16">
-        <el-card class="leaderboard" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <h3>运动排行榜</h3>
-              <el-radio-group v-model="timeRange" size="small" @change="fetchRankings">
-                <el-radio-button label="daily">日榜</el-radio-button>
-                <el-radio-button label="weekly">周榜</el-radio-button>
-                <el-radio-button label="monthly">月榜</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <el-table :data="rankings" stripe style="width: 100%">
-            <el-table-column prop="rank" label="排名" width="80">
-              <template #default="scope">
-                <div class="rank-cell">
-                  <el-icon v-if="scope.row.rank <= 3" :color="getRankColor(scope.row.rank)" size="20">
-                    <Trophy />
-                  </el-icon>
-                  <span :style="{ color: getRankColor(scope.row.rank) }">{{ scope.row.rank }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="avatar" label="" width="60">
-              <template #default="scope">
-                <el-avatar :size="40" :src="scope.row.avatar" />
-              </template>
-            </el-table-column>
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="totalDuration" label="运动时长">
-              <template #default="scope">
-                {{ (scope.row.totalDuration / 60).toFixed(1) }}小时
-              </template>
-            </el-table-column>
-            <el-table-column prop="achievements" label="成就">
-              <template #default="scope">
-                <el-tag
+        <div class="right-panel">
+          <!-- 运动排行榜 -->
+          <el-card class="leaderboard" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <h3>运动排行榜</h3>
+                <el-radio-group v-model="timeRange" size="small" @change="fetchRankings">
+                  <el-radio-button label="daily">日榜</el-radio-button>
+                  <el-radio-button label="weekly">周榜</el-radio-button>
+                  <el-radio-button label="monthly">月榜</el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
+            <el-table :data="rankings" stripe style="width: 100%">
+              <el-table-column prop="rank" label="排名" width="80">
+                <template #default="scope">
+                  <div class="rank-cell">
+                    <el-icon v-if="scope.row.rank <= 3" :color="getRankColor(scope.row.rank)" size="20">
+                      <Trophy />
+                    </el-icon>
+                    <span :style="{ color: getRankColor(scope.row.rank) }">{{ scope.row.rank }}</span>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="avatar" label="" width="60">
+                <template #default="scope">
+                  <el-avatar :size="40" :src="scope.row.avatar" />
+                </template>
+              </el-table-column>
+              <el-table-column prop="username" label="用户名" />
+              <el-table-column prop="totalDuration" label="运动时长">
+                <template #default="scope">
+                  {{ (scope.row.totalDuration / 60).toFixed(1) }} 小时
+                </template>
+              </el-table-column>
+              <el-table-column prop="achievements" label="成就">
+                <template #default="scope">
+                  <el-tag
                     v-for="achievement in scope.row.achievements"
                     :key="achievement"
                     size="small"
                     class="achievement-tag"
-                >
-                  {{ achievement }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
+                  >
+                    {{ achievement }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
 
-      <!-- 成就展示 -->
-      <el-col :span="8">
-        <el-card class="achievements-list" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <h3>成就徽章</h3>
-            </div>
-          </template>
-          <el-scrollbar height="400px">
-            <div v-for="achievement in achievements" :key="achievement.name" class="achievement-item">
-              <el-badge :is-dot="!achievement.unlocked" :type="achievement.unlocked ? 'success' : 'info'">
-                <el-card :class="{ 'locked': !achievement.unlocked }" shadow="hover">
-                  <div class="achievement-content">
-                    <el-icon
-                        :size="28"
-                        :color="achievement.unlocked ? '#67C23A' : '#909399'"
-                        class="achievement-icon"
+                   <!-- 成就徽章 -->
+          <el-card class="achievements-list" shadow="hover" style="margin-top: 20px">
+            <template #header>
+              <div class="card-header">
+                <h3>成就徽章</h3>
+              </div>
+            </template>
+            <el-scrollbar height="400px">
+              <div class="achievement-list">
+                <div
+                  v-for="achievement in achievements"
+                  :key="achievement.name"
+                  class="achievement-item"
+                >
+                  <el-badge :is-dot="!achievement.unlocked" :type="achievement.unlocked ? 'success' : 'info'">
+                    <el-card 
+                      :class="{
+                         locked: !achievement.unlocked ,
+                         unlocked: achievement.unlocked
+                         }" 
+                         shadow="hover"
                     >
-                      <component :is="achievement.icon"></component>
-                    </el-icon>
-                    <div class="achievement-info">
-                      <h4>{{ achievement.name }}</h4>
-                      <p>{{ achievement.description }}</p>
-                    </div>
-                  </div>
-                </el-card>
-              </el-badge>
-            </div>
-          </el-scrollbar>
-        </el-card>
+                      <div class="achievement-content">
+                        <el-icon
+                          :size="28"
+                          :color="achievement.unlocked ? '#67C23A' : '#909399'"
+                          class="achievement-icon"
+                        >
+                          <component :is="achievement.icon" />
+                        </el-icon>
+                        <div class="achievement-info">
+                          <h4>{{ achievement.name }}</h4>
+                          <p>{{ achievement.description }}</p>
+                        </div>
+                      </div>
+                    </el-card>
+                  </el-badge>
+                </div>
+              </div> 
+            </el-scrollbar>
+          </el-card>
+        </div>
       </el-col>
     </el-row>
   </div>
@@ -173,7 +185,7 @@ const totalAchievements = computed(() => achievements.value.length)
 
 const completionRate = computed(() => {
   if (!weeklyStats.value.totalDuration) return 0
-  const goalDuration = 7 * 60 // 假设目标是每周7小时
+  const goalDuration = 7 * 60// 假设目标是每周7小时
   return Math.min(100, Math.round((weeklyStats.value.totalDuration / goalDuration) * 100))
 })
 
@@ -222,17 +234,14 @@ const fetchAchievements = async () => {
 }
 
 const fetchWeeklyStats = async () => {
-  if (!userId.value) return
-
   try {
-    // 修改请求路径
-    const res = await axios.get(`http://localhost:8088/api/health/${userId.value}/exercise/stats/weekly`)
-    if (res.data.code === 200) {
-      weeklyStats.value = res.data.data
-    }
+    const userId = store.state.user?.id
+    if (!userId) return
+
+    const response = await axios.get(`http://localhost:8088/api/health/${userId}/exercise/stats/weekly`)
+    weeklyStats.value = response.data
   } catch (error) {
-    console.error('获取周统计失败:', error)
-    ElMessage.error('获取周统计失败')
+    console.error('Failed to fetch weekly stats:', error)
   }
 }
 
@@ -259,6 +268,25 @@ onMounted(async () => {
 .exercise-achievement-container {
   padding: 20px;
   min-height: calc(100vh - 40px);
+}
+/*整体左右布局*/
+.main-layout {
+  display: flex;
+  gap: 20px;
+}
+/*左栏与右栏布局*/
+.left-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-section {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .page-header {
@@ -344,7 +372,15 @@ onMounted(async () => {
 
 /* 成就列表样式 */
 .achievement-item {
-  margin-bottom: 12px;
+  flex: 0 0 calc(16.66%  - 12px); /* 一行 6 个 */
+   box-sizing: border-box;
+}
+
+/* 默认一行显示 6 个徽章 */
+.achievement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .achievement-content {
@@ -356,6 +392,13 @@ onMounted(async () => {
 
 .achievement-info {
   flex: 1;
+}
+
+.achievements-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px;
 }
 
 .achievement-info h4 {
@@ -372,6 +415,11 @@ onMounted(async () => {
 .locked {
   opacity: 0.6;
   background-color: #f5f7fa;
+}
+
+.unlocked {
+  background: linear-gradient(135deg, #ebd6609f, #ff8000); /* 金黄色渐变 */
+  color: #fff;
 }
 
 /* 进度条样式 */
@@ -414,4 +462,16 @@ onMounted(async () => {
     margin-bottom: 16px;
   }
 }
+
+@media (max-width: 1200px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .left-section,
+  .right-section {
+    width: 100%;
+  }
+}
+
 </style>
