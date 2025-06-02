@@ -57,14 +57,11 @@
           </div>
         </el-tab-pane>
       </el-tabs>
-    </div>
-
-    <!-- 日历视图 -->
+    </div>    <!-- 日历视图 -->
     <div v-show="currentView === 'calendar'" class="calendar-view">
-      <div class="calendar-wrapper">
-        <el-calendar v-model="currentDate">
-          <template #dateCell="{ data }">
-            <div class="calendar-cell">
+      <div class="calendar-wrapper">        <el-calendar v-model="currentDate">
+          <template #cell="{ data }">
+            <div class="calendar-cell" @click.stop="handleDateClick(data)" :class="{ 'has-data': nutritionCache[data.day], 'clickable': true }">
               <span class="date-number">{{ data.day.split('-').slice(-1)[0] }}</span>
               <div class="nutrition-bars" v-if="nutritionCache[data.day]">
                 <div class="nutrition-bar">
@@ -108,20 +105,91 @@
           </template>
         </el-calendar>
       </div>
-    </div>
-
-    <!-- 日详情对话框 -->
+    </div>    <!-- 日详情对话框 -->
     <el-dialog
         v-model="dialogVisible"
-        :title="selectedDate"
-        width="30%"
-    >
-      <DayDetailContent
-          v-if="selectedDayNutrition"
-          :nutrition-data="selectedDayNutrition"
-      />
-      <div v-else class="no-data">
-        暂无数据
+        :title="`${selectedDate} 饮食记录`"
+        width="800px"
+        :before-close="handleCloseDialog"
+    >      <div v-if="selectedDayData" class="day-detail-content">
+        <!-- 营养摘要 -->
+        <div class="nutrition-summary">
+          <h3>营养摘要</h3>
+          <div class="nutrition-cards">
+            <div class="nutrition-card">
+              <div class="icon">🔥</div>
+              <div class="info">
+                <span class="label">热量</span>
+                <span class="value">{{ Math.round(selectedDayData.totalCalories) }}kcal</span>
+                <span class="progress">{{ Math.round((selectedDayData.totalCalories / selectedDayData.recommendedCalories) * 100) }}%</span>
+              </div>
+            </div>
+            <div class="nutrition-card">
+              <div class="icon">🍞</div>
+              <div class="info">
+                <span class="label">碳水</span>
+                <span class="value">{{ Math.round(selectedDayData.totalCarbs) }}g</span>
+                <span class="progress">{{ Math.round((selectedDayData.totalCarbs / selectedDayData.recommendedCarbs) * 100) }}%</span>
+              </div>
+            </div>
+            <div class="nutrition-card">
+              <div class="icon">🥩</div>
+              <div class="info">
+                <span class="label">蛋白质</span>
+                <span class="value">{{ Math.round(selectedDayData.totalProtein) }}g</span>
+                <span class="progress">{{ Math.round((selectedDayData.totalProtein / selectedDayData.recommendedProtein) * 100) }}%</span>
+              </div>
+            </div>
+            <div class="nutrition-card">
+              <div class="icon">🥑</div>
+              <div class="info">
+                <span class="label">脂肪</span>
+                <span class="value">{{ Math.round(selectedDayData.totalFat) }}g</span>
+                <span class="progress">{{ Math.round((selectedDayData.totalFat / selectedDayData.recommendedFat) * 100) }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 餐次记录 -->
+        <div class="meals-section" v-if="selectedDayMeals && selectedDayMeals.length > 0">
+          <h3>餐次记录</h3>
+          <div class="meals-list">
+            <div v-for="meal in selectedDayMeals" :key="meal.id" class="meal-item">
+              <div class="meal-header">
+                <span class="meal-type">{{ getMealTypeName(meal.mealType) }}</span>
+                <span class="meal-time">{{ formatTime(meal.createTime) }}</span>
+              </div>
+              <div class="food-items">
+                <div v-for="food in meal.foods" :key="food.id" class="food-item">
+                  <img :src="food.imageUrl || '/default-food.png'" :alt="food.name" class="food-image">
+                  <div class="food-info">
+                    <span class="food-name">{{ food.name }}</span>
+                    <span class="food-amount">{{ food.quantity }}{{ food.unit }}</span>
+                  </div>
+                  <div class="food-nutrition">
+                    <span>{{ Math.round(food.calories) }}kcal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 当有营养数据但没有具体餐食记录时显示 -->
+        <div v-else class="empty-state">
+          <div class="empty-icon">🍽️</div>
+          <p>这一天还没有详细的餐食记录</p>
+          <el-button type="primary" @click="goToAddMeal">添加餐食</el-button>
+        </div>
+      </div>
+      
+      <!-- 当完全没有数据时显示 -->
+      <div v-else class="empty-state">
+        <div class="empty-icon">📊</div>
+        <p>{{ selectedDate }}暂无营养数据</p>
+        <p class="empty-subtitle">开始记录您的饮食来查看营养分析</p>
+        <el-button type="primary" @click="goToAddMeal">添加今日餐食</el-button>
       </div>
     </el-dialog>
   </div>
@@ -130,12 +198,16 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { getDailyNutrition, getNutritionStats, getMonthlyNutrition } from '@/api/diet'
+import { useRouter } from 'vue-router'
+import { getDailyNutrition, getNutritionStats, getMonthlyNutrition, getDailyMeals } from '@/api/diet'
 import NutritionChart from './NutritionChart.vue'
-import DayDetailContent from './DayDetailContent.vue'
 import { ElMessage } from 'element-plus'
 
+// 定义组件事件
+const emit = defineEmits(['add-meal'])
+
 const store = useStore()
+const router = useRouter()
 const statsData = ref({
   dates: [],
   calories: [],
@@ -153,7 +225,8 @@ const activeNutrient = ref('calories')
 const currentDate = ref(new Date())
 const dialogVisible = ref(false)
 const selectedDate = ref('')
-const selectedDayNutrition = ref(null)
+const selectedDayData = ref(null)
+const selectedDayMeals = ref([])
 const nutritionCache = ref({})
 const loading = ref(false)
 
@@ -301,11 +374,84 @@ watch(() => currentDate.value, (newDate) => {
   loadMonthNutrition(year, month)
 })
 
-// 显示日详情
-const showDayDetail = async (dateData) => {
-  selectedDate.value = dateData.day
-  selectedDayNutrition.value = await getDayNutrition(dateData)
-  dialogVisible.value = true
+// 处理日期点击（测试用）
+const handleDateClick = (data) => {
+  console.log('日期被点击了:', data)
+  selectedDate.value = formatSelectedDate(data.day)
+  dialogVisible.value = true // 先设置对话框可见
+  
+  // 然后异步加载数据
+  loadDayDetails(data).catch(error => {
+    console.error('加载日详情失败:', error)
+    // 即使加载失败也保持对话框打开，显示空状态
+  })
+}
+
+// 加载日详情数据
+const loadDayDetails = async (dateData) => {
+  try {
+    // 获取营养数据
+    selectedDayData.value = await getDayNutrition(dateData)
+    
+    // 获取详细餐食记录
+    const userId = store.state.user?.id
+    if (userId) {
+      const mealsResponse = await getDailyMeals(userId, dateData.day)
+      selectedDayMeals.value = mealsResponse?.data || []
+    }
+  } catch (error) {
+    console.error('获取日详情失败:', error)
+    ElMessage.error('获取日详情失败')
+    // 设置为null，但不关闭对话框
+    selectedDayData.value = null
+    selectedDayMeals.value = []
+  }
+}
+
+// 格式化选中日期显示
+const formatSelectedDate = (dateStr) => {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  })
+}
+
+// 获取餐次类型名称
+const getMealTypeName = (mealType) => {
+  const mealTypeMap = {
+    'breakfast': '早餐',
+    'lunch': '午餐', 
+    'dinner': '晚餐',
+    'snack': '加餐'
+  }
+  return mealTypeMap[mealType] || mealType
+}
+
+// 格式化时间
+const formatTime = (timeStr) => {
+  const date = new Date(timeStr)
+  return date.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 关闭对话框
+const handleCloseDialog = () => {
+  dialogVisible.value = false
+  selectedDayData.value = null
+  selectedDayMeals.value = []
+}
+
+// 跳转到添加餐食
+const goToAddMeal = () => {
+  dialogVisible.value = false
+  // 将当前选中的日期通过事件发送给父组件
+  const rawDate = selectedDate.value.replace(/年|月|日|星期./g, '').trim()
+  emit('add-meal', rawDate)
 }
 
 
@@ -415,135 +561,397 @@ const getProgressStyle = (percentage, color) => {
 </script>
 
 <style scoped>
+/* 主容器样式 */
 .nutrition-statistics {
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1);
 }
 
+/* 控制区域样式 */
 .controls-section {
-  padding: 16px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 20px 20px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
 }
 
+/* 视图切换按钮组 */
 .view-toggle {
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  backdrop-filter: blur(10px);
 }
 
-:deep(.el-radio-button__inner) {
-  padding: 8px 20px;
-  transition: all 0.3s ease;
+:deep(.view-toggle .el-radio-button) {
+  margin: 0 2px;
 }
 
-:deep(.el-radio-button__inner:hover) {
+:deep(.view-toggle .el-radio-button__inner) {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+:deep(.view-toggle .el-radio-button__inner:hover) {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
+:deep(.view-toggle .el-radio-button.is-active .el-radio-button__inner) {
+  background: white;
+  color: #10b981;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 范围选择器 */
 .range-selector {
-  margin-left: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  backdrop-filter: blur(10px);
+}
+
+:deep(.range-selector .el-radio-button__inner) {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+:deep(.range-selector .el-radio-button__inner:hover) {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.range-selector .el-radio-button.is-active .el-radio-button__inner) {
+  background: white;
+  color: #10b981;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 统计视图样式 */
 .statistics-view {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 32px;
   min-height: 0;
 }
 
+/* 标签页美化 */
+:deep(.el-tabs__header) {
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+:deep(.el-tabs__nav-wrap) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.el-tabs__nav) {
+  border: none;
+  display: flex;
+  gap: 4px;
+}
+
+:deep(.el-tabs__item) {
+  padding: 0 24px;
+  height: 48px;
+  line-height: 48px;
+  border: none;
+  color: #64748b;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  margin: 0;
+}
+
+:deep(.el-tabs__item:hover) {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  transform: translateY(-1px);
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: white;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+:deep(.el-tabs__active-bar) {
+  display: none;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+/* 图表容器美化 */
 .chart {
-  height: 400px;
-  margin-top: 16px;
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  transition: all 0.3s ease;
-  max-width: 300px;
-  margin: 16px auto 0;
+  height: 450px;
+  margin: 24px auto 0;
+  background: white;
+  border-radius: 20px;
+  /* padding: 32px; */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  max-width: none;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .chart:hover {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 12px 48px rgba(16, 185, 129, 0.15);
+  transform: translateY(-4px);
+  border-color: #10b981;
 }
 
 /* 日历视图样式 */
 .calendar-view {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 32px;
   min-height: 0;
 }
 
 .calendar-wrapper {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* 日历表格样式 */
+:deep(.el-calendar) {
+  border: none;
+  background: transparent;
+}
+
+:deep(.el-calendar__header) {
+  padding: 0 0 24px 0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:deep(.el-calendar__title) {
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+:deep(.el-calendar__button-group) {
+  display: flex;
+  gap: 8px;
+}
+
+:deep(.el-calendar__button-group .el-button) {
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-calendar__button-group .el-button--text) {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+:deep(.el-calendar__button-group .el-button--text:hover) {
+  background: rgba(16, 185, 129, 0.15);
+  transform: translateY(-1px);
+}
+
+:deep(.el-calendar__body) {
+  padding: 0;
 }
 
 :deep(.el-calendar-table) {
   table-layout: fixed;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+:deep(.el-calendar-table thead th) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #64748b;
+  font-weight: 600;
+  padding: 16px 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
 }
 
 :deep(.el-calendar-table td) {
   height: auto;
   padding: 0;
-  border: 1px solid #ebeef5;
+  border: 1px solid #e2e8f0;
+  background: white;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+:deep(.el-calendar-table td:hover) {
+  background: rgba(16, 185, 129, 0.02);
+  border-color: #10b981;
+}
+
+:deep(.el-calendar-table td.is-today) {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: #10b981;
+}
+
+:deep(.el-calendar-table td.is-today::before) {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
 }
 
 :deep(.el-calendar-day) {
   height: 100%;
-  padding: 4px;
-  min-height: 120px;
+  padding: 0;
+  min-height: 140px;
 }
 
+/* 日历格子内容 */
 .calendar-cell {
   height: 100%;
-  padding: 4px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  position: relative;
+  z-index: 5; /* 提高z-index确保可点击 */
+}
+
+.calendar-cell.clickable {
+  cursor: pointer;
+}
+
+.calendar-cell:hover {
+  background: rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.calendar-cell.has-data {
+  background: rgba(16, 185, 129, 0.02);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.calendar-cell.has-data:hover {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.calendar-cell:active {
+  transform: translateY(0);
 }
 
 .date-number {
-  font-size: 14px;
-  color: #606266;
+  font-size: 16px;
+  color: #1e293b;
+  font-weight: 600;
+  align-self: flex-start;
 }
 
 .nutrition-bars {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1;
 }
 
 .nutrition-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   height: 20px;
 }
 
 .label {
-  width: 20px;
+  width: 18px;
   text-align: center;
-  color: #909399;
-  font-size: 12px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .progress-bar {
   flex: 1;
-  height: 6px;
-  background-color: #f0f2f5;
-  border-radius: 3px;
+  height: 8px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
@@ -551,69 +959,398 @@ const getProgressStyle = (percentage, color) => {
   left: 0;
   top: 0;
   height: 100%;
-  transition: width 0.3s ease;
+  border-radius: 6px;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 .value {
-  min-width: 36px;
+  min-width: 28px;
   text-align: right;
-  color: #909399;
-  font-size: 12px;
-}
-
-:deep(.el-calendar__header) {
-  padding: 12px 20px;
-  border-bottom: 1px solid #ebeef5;
-  margin-bottom: 16px;
-}
-
-:deep(.el-calendar__title) {
-  color: #303133;
-  font-size: 16px;
+  color: #64748b;
+  font-size: 10px;
   font-weight: 600;
-}
-
-:deep(.el-calendar__body) {
-  padding: 12px 20px;
+  flex-shrink: 0;
 }
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: #f1f5f9;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
-  border-radius: 3px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #909399;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
-/* 优化tabs样式 */
-:deep(.el-tabs__header) {
+::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+/* 营养进度条颜色定制 */
+.nutrition-bar:nth-child(1) .progress-fill {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.nutrition-bar:nth-child(2) .progress-fill {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.nutrition-bar:nth-child(3) .progress-fill {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.nutrition-bar:nth-child(4) .progress-fill {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .controls-section {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .view-toggle,
+  .range-selector {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .statistics-view,
+  .calendar-view {
+    padding: 16px;
+  }
+  
+  .chart,
+  .calendar-wrapper {
+    padding: 16px;
+  }
+  
+  :deep(.el-calendar__title) {
+    font-size: 18px;
+  }
+  
+  .calendar-cell {
+    padding: 8px 4px;
+  }
+  
+  .date-number {
+    font-size: 14px;
+  }
+  
+  .nutrition-bar {
+    height: 16px;
+  }
+  
+  .progress-bar {
+    height: 6px;
+  }
+  
+  .label {
+    width: 14px;
+    font-size: 10px;
+  }
+  
+  .value {
+    min-width: 24px;
+    font-size: 9px;
+  }
+}
+
+/* 动画效果 */
+.nutrition-statistics {
+  animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 空数据状态 */
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #9ca3af;
+  font-size: 16px;
+}
+
+/* 日详情对话框样式 */
+.day-detail-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.nutrition-summary h3 {
+  color: #1f2937;
   margin-bottom: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-:deep(.el-tabs__nav-wrap::after) {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #dcdfe6, transparent);
+.nutrition-summary h3::before {
+  content: '📊';
+  font-size: 18px;
 }
 
-:deep(.el-tabs__item) {
-  font-size: 14px;
+.nutrition-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.nutrition-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   transition: all 0.3s ease;
 }
 
-:deep(.el-tabs__item.is-active) {
+.nutrition-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+.nutrition-card .icon {
+  font-size: 24px;
+  width: 40px;
+  text-align: center;
+}
+
+.nutrition-card .info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nutrition-card .label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.nutrition-card .value {
+  font-size: 18px;
   font-weight: 600;
-  transform: scale(1.05);
+  color: #1f2937;
+}
+
+.nutrition-card .progress {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.meals-section h3 {
+  color: #1f2937;
+  margin-bottom: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meals-section h3::before {
+  content: '🍽️';
+  font-size: 18px;
+}
+
+.meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meal-item {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.meal-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #10b981;
+}
+
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.meal-type {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.meal-time {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.food-items {
+  padding: 16px 20px;
+}
+
+.food-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.food-item:last-child {
+  border-bottom: none;
+}
+
+.food-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.food-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.food-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.food-amount {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.food-nutrition {
+  font-size: 14px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.empty-state p {
+  font-size: 18px;
+  color: #64748b;
+  margin: 8px 0;
+}
+
+.empty-subtitle {
+  font-size: 14px !important;
+  color: #94a3b8 !important;
+  margin-bottom: 24px !important;
+}
+
+.empty-state .el-button {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+.loading-state {
+  padding: 24px;
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+  .nutrition-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .meal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .food-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .food-image {
+    width: 40px;
+    height: 40px;
+  }
 }
 </style>

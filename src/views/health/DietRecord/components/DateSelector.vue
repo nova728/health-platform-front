@@ -1,22 +1,28 @@
 <template>
-    <div class="diet-record">
+    <div class="date-selector-container">
       <div class="date-selector">
-        <el-date-picker
-          v-model="selectedDate"
-          type="date"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD"
-          placeholder="选择日期"
-          :disabled-date="disabledDate"
-          @change="handleDateChange"
-        />
+        <div class="date-picker-section">
+          <el-date-picker
+            v-model="selectedDate"
+            type="date"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            placeholder="选择日期"
+            :disabled-date="disabledDate"
+            @change="handleDateChange"
+            class="date-picker"
+          />
+        </div>
         <div class="date-navigation">
-          <el-button @click="changeDate(-1)">
+          <el-button @click="changeDate(-1)" class="nav-button prev-button">
             <el-icon><ArrowLeft /></el-icon>
             前一天
           </el-button>
-          <el-button @click="setToday">今天</el-button>
-          <el-button @click="changeDate(1)">
+          <el-button @click="setToday" class="nav-button today-button">
+            <el-icon><Calendar /></el-icon>
+            今天
+          </el-button>
+          <el-button @click="changeDate(1)" class="nav-button next-button">
             后一天
             <el-icon><ArrowRight /></el-icon>
           </el-button>
@@ -24,11 +30,10 @@
       </div>
     </div>
   </template>
-  
-  <script setup>
+    <script setup>
   import { ref, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+  import { ArrowLeft, ArrowRight, Calendar } from '@element-plus/icons-vue'
   import { getDailyNutrition } from '@/api/diet'
   import { useStore } from 'vuex'
   
@@ -110,29 +115,97 @@
     handleDateChange(selectedDate.value)
   })
   </script>
-  
-  <style scoped>
-  .diet-record {
-    padding: 20px;
+    <style scoped>
+  .date-selector-container {
+    width: 100%;
   }
   
   .date-selector {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 20px;
-    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .date-picker-section {
+    flex-shrink: 0;
+  }
+  
+  :deep(.date-picker) {
+    width: 200px;
+  }
+  
+  :deep(.el-date-editor) {
+    border-radius: 20px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  :deep(.el-date-editor:focus-within) {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
   }
   
   .date-navigation {
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    align-items: center;
   }
   
-  :deep(.el-date-editor) {
-    width: 180px;
+  .nav-button {
+    padding: 10px 20px;
+    border-radius: 15px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .nav-button:hover {
+    border-color: #10b981;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  }
+  
+  .today-button {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: transparent;
+    color: white;
+  }
+  
+  .today-button:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
   }
   
   :deep(.el-button .el-icon) {
-    margin: 0 4px;
+    margin: 0 6px;
+  }
+  
+  /* 响应式布局 */
+  @media (max-width: 768px) {
+    .date-selector {
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .date-navigation {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .nav-button {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
   }
   </style>

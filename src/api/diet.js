@@ -56,3 +56,9 @@ export function getMonthlyNutrition(userId, year, month) {
     params: { year, month }
   })
 }
+
+export function getDailyMeals(userId, date) {
+  return axios.get(`http://localhost:8088/api/diet/${userId}/meals/daily`, {
+    params: { date }
+  })
+}

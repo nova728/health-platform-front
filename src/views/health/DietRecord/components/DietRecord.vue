@@ -4,8 +4,7 @@
     <div class="date-selector-wrapper">
       <DateSelector @date-change="handleDateChange" />
     </div>
-    
-    <!-- 可滚动的餐次记录 -->
+      <!-- 可滚动的餐次记录 -->    
     <div class="meals-wrapper">
       <MealSections 
         :meals="dailyMeals"
@@ -137,43 +136,45 @@ const handleDeleteMeal = async (mealId) => {
 
 // 定义事件
 const emit = defineEmits(['nutrition-updated', 'date-change'])
+
+// 暴露方法给父组件调用
+defineExpose({
+  showFoodSearch,
+  handleDateChange
+})
 </script>
 
 <style scoped>
 .diet-record {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.date-navigation {
-  display: flex;
-  gap: 10px;
-}
-
-:deep(.el-date-editor) {
-  width: 180px;
-}
-
-.diet-record-container {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .date-selector-wrapper {
   flex-shrink: 0;
   margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .meals-wrapper {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
+}
+
+:deep(.el-date-editor) {
+  width: 180px;
+  border-radius: 20px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-date-editor:focus-within) {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 </style>
