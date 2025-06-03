@@ -25,7 +25,7 @@
       <el-card class="stat-card">
         <template #header>
           <div class="card-header">
-            <span>本周运动时长</span>
+            <span>⏱️本周运动时长</span>
             <el-tag :type="getDurationTagType" size="small">{{ getDurationStatus }}</el-tag>
           </div>
         </template>
@@ -45,7 +45,7 @@
       <el-card class="stat-card">
         <template #header>
           <div class="card-header">
-            <span>本周消耗</span>
+            <span>🔥本周消耗</span>
             <el-tag :type="getCaloriesTagType" size="small">{{ getCaloriesStatus }}</el-tag>
           </div>
         </template>
@@ -65,7 +65,7 @@
       <el-card class="stat-card">
         <template #header>
           <div class="card-header">
-            <span>运动次数</span>
+            <span>🧩运动次数</span>
             <el-tag :type="getCountTagType" size="small">{{ getCountStatus }}</el-tag>
           </div>
         </template>

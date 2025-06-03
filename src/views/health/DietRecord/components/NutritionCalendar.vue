@@ -1,6 +1,5 @@
 <template>
-  <div class="nutrition-statistics">
-    <!-- 视图切换和时间范围选择 -->
+  <div class="nutrition-statistics">    <!-- 视图切换和时间范围选择 -->
     <div class="controls-section">
       <el-radio-group v-model="currentView" class="view-toggle">
         <el-radio-button label="statistics">统计图表</el-radio-button>
@@ -59,131 +58,126 @@
       </el-tabs>
     </div>    <!-- 日历视图 -->
     <div v-show="currentView === 'calendar'" class="calendar-view">
-      <div class="calendar-wrapper">        <el-calendar v-model="currentDate">
-          <template #cell="{ data }">
-            <div class="calendar-cell" @click.stop="handleDateClick(data)" :class="{ 'has-data': nutritionCache[data.day], 'clickable': true }">
-              <span class="date-number">{{ data.day.split('-').slice(-1)[0] }}</span>
-              <div class="nutrition-bars" v-if="nutritionCache[data.day]">
-                <div class="nutrition-bar">
-                  <span class="label">卡</span>
-                  <div class="progress-bar">
-                    <div class="progress-fill"
-                         :style="getProgressStyle(nutritionCache[data.day].caloriesPercentage, '#409EFF')">
-                    </div>
-                  </div>
-                  <span class="value">{{ Math.round(nutritionCache[data.day].totalCalories) }}</span>
-                </div>
-                <div class="nutrition-bar">
-                  <span class="label">碳</span>
-                  <div class="progress-bar">
-                    <div class="progress-fill"
-                         :style="getProgressStyle(nutritionCache[data.day].carbsPercentage, '#67C23A')">
-                    </div>
-                  </div>
-                  <span class="value">{{ Math.round(nutritionCache[data.day].totalCarbs) }}</span>
-                </div>
-                <div class="nutrition-bar">
-                  <span class="label">蛋</span>
-                  <div class="progress-bar">
-                    <div class="progress-fill"
-                         :style="getProgressStyle(nutritionCache[data.day].proteinPercentage, '#E6A23C')">
-                    </div>
-                  </div>
-                  <span class="value">{{ Math.round(nutritionCache[data.day].totalProtein) }}</span>
-                </div>
-                <div class="nutrition-bar">
-                  <span class="label">脂</span>
-                  <div class="progress-bar">
-                    <div class="progress-fill"
-                         :style="getProgressStyle(nutritionCache[data.day].fatPercentage, '#F56C6C')">
-                    </div>
-                  </div>
-                  <span class="value">{{ Math.round(nutritionCache[data.day].totalFat) }}</span>
-                </div>
-              </div>
+      <div class="custom-calendar">
+        <!-- 日历头部 -->
+        <div class="calendar-header">
+          <el-button @click="prevMonth" icon="ArrowLeft" circle size="small"></el-button>
+          <span class="month-year">{{ formatMonthYear(currentDate) }}</span>
+          <el-button @click="nextMonth" icon="ArrowRight" circle size="small"></el-button>
+        </div>
+
+        <!-- 星期标题 -->
+        <div class="weekdays">
+          <div v-for="day in weekdays" :key="day" class="weekday">{{ day }}</div>
+        </div>
+
+        <!-- 日期网格 -->
+        <div class="days-grid">
+          <div
+              v-for="date in calendarDays"
+              :key="`${date.year}-${date.month}-${date.day}`"
+              class="day-cell"
+              :class="{
+              'other-month': !date.isCurrentMonth,
+              'today': date.isToday,
+              'has-data': date.hasData,
+              'selected': selectedDateStr === date.fullDate
+            }"
+              @click="handleDateClick({ day: date.fullDate })"
+          >
+            <span class="day-number">{{ date.day }}</span>
+            <div class="nutrition-indicators" v-if="date.hasData && nutritionCache[date.fullDate]">
+              <div class="nutrition-dot calories"
+                   :style="{ opacity: getNutritionOpacity(nutritionCache[date.fullDate].caloriesPercentage) }"></div>
+              <div class="nutrition-dot carbs"
+                   :style="{ opacity: getNutritionOpacity(nutritionCache[date.fullDate].carbsPercentage) }"></div>
+              <div class="nutrition-dot protein"
+                   :style="{ opacity: getNutritionOpacity(nutritionCache[date.fullDate].proteinPercentage) }"></div>
+              <div class="nutrition-dot fat"
+                   :style="{ opacity: getNutritionOpacity(nutritionCache[date.fullDate].fatPercentage) }"></div>
             </div>
-          </template>
-        </el-calendar>
+          </div>
+        </div>
       </div>
-    </div>    <!-- 日详情对话框 -->
+    </div><!-- 日详情对话框 -->
     <el-dialog
         v-model="dialogVisible"
         :title="`${selectedDate} 饮食记录`"
         width="800px"
         :before-close="handleCloseDialog"
-    >      <div v-if="selectedDayData" class="day-detail-content">
-        <!-- 营养摘要 -->
-        <div class="nutrition-summary">
-          <h3>营养摘要</h3>
-          <div class="nutrition-cards">
-            <div class="nutrition-card">
-              <div class="icon">🔥</div>
-              <div class="info">
-                <span class="label">热量</span>
-                <span class="value">{{ Math.round(selectedDayData.totalCalories) }}kcal</span>
-                <span class="progress">{{ Math.round((selectedDayData.totalCalories / selectedDayData.recommendedCalories) * 100) }}%</span>
-              </div>
+        :z-index="3000"
+        :append-to-body="true"
+        :destroy-on-close="false"
+        center
+    ><div v-if="selectedDayData" class="day-detail-content">
+      <!-- 营养摘要 -->
+      <div class="nutrition-summary">
+        <h3>营养摘要</h3>
+        <div class="nutrition-cards">
+          <div class="nutrition-card">
+            <div class="icon">🔥</div>
+            <div class="info">
+              <span class="label">热量</span>
+              <span class="value">{{ Math.round(selectedDayData.totalCalories) }}kcal</span>
+              <span class="progress">{{ Math.round((selectedDayData.totalCalories / selectedDayData.recommendedCalories) * 100) }}%</span>
             </div>
-            <div class="nutrition-card">
-              <div class="icon">🍞</div>
-              <div class="info">
-                <span class="label">碳水</span>
-                <span class="value">{{ Math.round(selectedDayData.totalCarbs) }}g</span>
-                <span class="progress">{{ Math.round((selectedDayData.totalCarbs / selectedDayData.recommendedCarbs) * 100) }}%</span>
-              </div>
+          </div>
+          <div class="nutrition-card">
+            <div class="icon">🍞</div>
+            <div class="info">
+              <span class="label">碳水</span>
+              <span class="value">{{ Math.round(selectedDayData.totalCarbs) }}g</span>
+              <span class="progress">{{ Math.round((selectedDayData.totalCarbs / selectedDayData.recommendedCarbs) * 100) }}%</span>
             </div>
-            <div class="nutrition-card">
-              <div class="icon">🥩</div>
-              <div class="info">
-                <span class="label">蛋白质</span>
-                <span class="value">{{ Math.round(selectedDayData.totalProtein) }}g</span>
-                <span class="progress">{{ Math.round((selectedDayData.totalProtein / selectedDayData.recommendedProtein) * 100) }}%</span>
-              </div>
+          </div>
+          <div class="nutrition-card">
+            <div class="icon">🥩</div>
+            <div class="info">
+              <span class="label">蛋白质</span>
+              <span class="value">{{ Math.round(selectedDayData.totalProtein) }}g</span>
+              <span class="progress">{{ Math.round((selectedDayData.totalProtein / selectedDayData.recommendedProtein) * 100) }}%</span>
             </div>
-            <div class="nutrition-card">
-              <div class="icon">🥑</div>
-              <div class="info">
-                <span class="label">脂肪</span>
-                <span class="value">{{ Math.round(selectedDayData.totalFat) }}g</span>
-                <span class="progress">{{ Math.round((selectedDayData.totalFat / selectedDayData.recommendedFat) * 100) }}%</span>
-              </div>
+          </div>
+          <div class="nutrition-card">
+            <div class="icon">🥑</div>
+            <div class="info">
+              <span class="label">脂肪</span>
+              <span class="value">{{ Math.round(selectedDayData.totalFat) }}g</span>
+              <span class="progress">{{ Math.round((selectedDayData.totalFat / selectedDayData.recommendedFat) * 100) }}%</span>
             </div>
           </div>
         </div>
-
-        <!-- 餐次记录 -->
-        <div class="meals-section" v-if="selectedDayMeals && selectedDayMeals.length > 0">
-          <h3>餐次记录</h3>
-          <div class="meals-list">
-            <div v-for="meal in selectedDayMeals" :key="meal.id" class="meal-item">
-              <div class="meal-header">
-                <span class="meal-type">{{ getMealTypeName(meal.mealType) }}</span>
-                <span class="meal-time">{{ formatTime(meal.createTime) }}</span>
-              </div>
-              <div class="food-items">
-                <div v-for="food in meal.foods" :key="food.id" class="food-item">
-                  <img :src="food.imageUrl || '/default-food.png'" :alt="food.name" class="food-image">
-                  <div class="food-info">
-                    <span class="food-name">{{ food.name }}</span>
-                    <span class="food-amount">{{ food.quantity }}{{ food.unit }}</span>
-                  </div>
-                  <div class="food-nutrition">
-                    <span>{{ Math.round(food.calories) }}kcal</span>
-                  </div>
+      </div>      <!-- 餐次记录 -->
+      <div class="meals-section" v-if="selectedDayMeals && selectedDayMeals.length > 0">
+        <h3>餐次记录</h3>
+        <div class="meals-list">
+          <div v-for="meal in groupMealsByType(selectedDayMeals)" :key="meal.type" class="meal-item">
+            <div class="meal-header">
+              <span class="meal-type">{{ getMealTypeName(meal.type) }}</span>
+              <span class="meal-time">{{ formatTime(meal.time) }}</span>
+            </div>            <div class="food-items">
+              <div v-for="food in meal.foods" :key="food.id" class="food-item">
+                <div class="food-info">
+                  <span class="food-name">{{ food.foodName }}</span>
+                  <span class="food-amount">{{ food.servingAmount }}{{ food.servingUnit }}</span>
+                </div>
+                <div class="food-nutrition">
+                  <span>{{ Math.round(food.calories) }}kcal</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- 当有营养数据但没有具体餐食记录时显示 -->
-        <div v-else class="empty-state">
-          <div class="empty-icon">🍽️</div>
-          <p>这一天还没有详细的餐食记录</p>
-          <el-button type="primary" @click="goToAddMeal">添加餐食</el-button>
-        </div>
       </div>
-      
+
+      <!-- 当有营养数据但没有具体餐食记录时显示 -->
+      <div v-else class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <p>这一天还没有详细的餐食记录</p>
+        <el-button type="primary" @click="goToAddMeal">添加餐食</el-button>
+      </div>
+    </div>
+
       <!-- 当完全没有数据时显示 -->
       <div v-else class="empty-state">
         <div class="empty-icon">📊</div>
@@ -196,10 +190,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import { getDailyNutrition, getNutritionStats, getMonthlyNutrition, getDailyMeals } from '@/api/diet'
+import { getDailyNutrition, getNutritionStats, getMonthlyNutrition } from '@/api/diet'
 import NutritionChart from './NutritionChart.vue'
 import { ElMessage } from 'element-plus'
 
@@ -225,25 +219,140 @@ const activeNutrient = ref('calories')
 const currentDate = ref(new Date())
 const dialogVisible = ref(false)
 const selectedDate = ref('')
+const selectedDateStr = ref('')
 const selectedDayData = ref(null)
 const selectedDayMeals = ref([])
 const nutritionCache = ref({})
 const loading = ref(false)
 
+// 星期标题
+const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+
+// 生成日历天数数据
+const calendarDays = computed(() => {
+  const year = currentDate.value.getFullYear()
+  const month = currentDate.value.getMonth()
+
+  // 获取本月第一天和最后一天
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+
+  // 获取第一天是星期几
+  const firstDayWeek = firstDay.getDay()
+
+  // 获取本月天数
+  const daysInMonth = lastDay.getDate()
+
+  const days = []
+
+  // 添加上个月的尾部日期
+  for (let i = firstDayWeek - 1; i >= 0; i--) {
+    const date = new Date(year, month, -i)
+    days.push({
+      day: date.getDate(),
+      month: date.getMonth() + 1,
+      year: date.getFullYear(),
+      fullDate: formatDate(date),
+      isCurrentMonth: false,
+      isToday: isToday(formatDate(date)),
+      hasData: !!nutritionCache.value[formatDate(date)]
+    })
+  }
+
+  // 添加本月的日期
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day)
+    const fullDate = formatDate(date)
+    days.push({
+      day,
+      month: month + 1,
+      year,
+      fullDate,
+      isCurrentMonth: true,
+      isToday: isToday(fullDate),
+      hasData: !!nutritionCache.value[fullDate]
+    })
+  }
+
+  // 添加下个月的开头日期，补满6行
+  const totalCells = 42 // 6行 * 7列
+  const remainingCells = totalCells - days.length
+  for (let day = 1; day <= remainingCells; day++) {
+    const date = new Date(year, month + 1, day)
+    days.push({
+      day,
+      month: month + 2 > 12 ? 1 : month + 2,
+      year: month + 1 > 11 ? year + 1 : year,
+      fullDate: formatDate(date),
+      isCurrentMonth: false,
+      isToday: isToday(formatDate(date)),
+      hasData: !!nutritionCache.value[formatDate(date)]
+    })
+  }
+
+  return days
+})
+
+// 格式化日期为 YYYY-MM-DD
+const formatDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// 格式化月年显示
+const formatMonthYear = (date) => {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  return `${year}年${month}月`
+}
+
+// 上一个月
+const prevMonth = () => {
+  const newDate = new Date(currentDate.value)
+  newDate.setMonth(newDate.getMonth() - 1)
+  currentDate.value = newDate
+}
+
+// 下一个月
+const nextMonth = () => {
+  const newDate = new Date(currentDate.value)
+  newDate.setMonth(newDate.getMonth() + 1)
+  currentDate.value = newDate
+}
+
+// 获取营养指示器的透明度
+const getNutritionOpacity = (percentage) => {
+  const p = Number(percentage) || 0
+  return Math.min(0.3 + (p / 100) * 0.7, 1)
+}
+
 // 获取某天的营养数据
 const getDayNutrition = async (dateData) => {
   const dateStr = dateData.day
+  console.log('获取营养数据 for date:', dateStr)
+
+  // 先检查缓存
   if (nutritionCache.value[dateStr]) {
+    console.log('从缓存获取数据:', nutritionCache.value[dateStr])
     return nutritionCache.value[dateStr]
   }
 
   try {
     const userId = store.state.user?.id
-    if (!userId) return null
+    if (!userId) {
+      console.log('用户ID未找到')
+      return null
+    }
 
+    console.log('从API获取营养数据:', { userId, dateStr })
     const response = await getDailyNutrition(userId, dateStr)
+    console.log('API响应:', response)
+
     if (response.data) {
       nutritionCache.value[dateStr] = response.data
+      console.log('缓存已更新:', nutritionCache.value[dateStr])
       return response.data
     }
     return null
@@ -358,9 +467,18 @@ const proteinChartData = computed(() => ({
 
 const fatChartData = computed(() => ({
   dates: statsData.value.dates || [],
-  actual: statsData.value.fat || [],
-  recommended: statsData.value.recommendedFat || []
+  actual: statsData.value.fat || [],  recommended: statsData.value.recommendedFat || []
 }))
+
+// 判断是否是今天
+const isToday = (dateStr) => {
+  const today = new Date()
+  const targetDate = new Date(dateStr)
+
+  return today.getFullYear() === targetDate.getFullYear() &&
+      today.getMonth() === targetDate.getMonth() &&
+      today.getDate() === targetDate.getDate()
+}
 
 // 监听日期范围变化
 watch(dateRange, () => {
@@ -374,35 +492,73 @@ watch(() => currentDate.value, (newDate) => {
   loadMonthNutrition(year, month)
 })
 
-// 处理日期点击（测试用）
+// 处理日期点击
 const handleDateClick = (data) => {
-  console.log('日期被点击了:', data)
-  selectedDate.value = formatSelectedDate(data.day)
-  dialogVisible.value = true // 先设置对话框可见
-  
-  // 然后异步加载数据
-  loadDayDetails(data).catch(error => {
-    console.error('加载日详情失败:', error)
-    // 即使加载失败也保持对话框打开，显示空状态
-  })
+  console.log('=== 日期点击事件触发 ===')
+  console.log('点击的日期:', data.day)
+  console.log('data对象:', data)
+
+  try {
+    // 设置选中的日期
+    selectedDate.value = formatSelectedDate(data.day)
+    console.log('设置的selectedDate:', selectedDate.value)
+
+    // 立即显示对话框
+    dialogVisible.value = true
+    console.log('dialogVisible设置为true')
+
+    // 异步加载该日期的详细数据
+    loadDayDetails(data)
+  } catch (error) {
+    console.error('handleDateClick出错:', error)
+  }
 }
 
 // 加载日详情数据
 const loadDayDetails = async (dateData) => {
   try {
-    // 获取营养数据
-    selectedDayData.value = await getDayNutrition(dateData)
-    
-    // 获取详细餐食记录
+    console.log('开始加载日详情数据:', dateData.day)    // 获取营养数据和餐次记录
     const userId = store.state.user?.id
     if (userId) {
-      const mealsResponse = await getDailyMeals(userId, dateData.day)
-      selectedDayMeals.value = mealsResponse?.data || []
+      try {
+        console.log('获取营养数据和餐食记录 for:', { userId, date: dateData.day })
+        // 使用与DietRecord相同的方式获取数据
+        const nutritionResponse = await getDailyNutrition(userId, dateData.day)
+        console.log('营养数据API响应:', nutritionResponse)
+
+        if (nutritionResponse.data) {
+          // 设置营养数据
+          selectedDayData.value = {
+            totalCalories: nutritionResponse.data.totalCalories || 0,
+            totalCarbs: nutritionResponse.data.totalCarbs || 0,
+            totalProtein: nutritionResponse.data.totalProtein || 0,
+            totalFat: nutritionResponse.data.totalFat || 0,
+            recommendedCalories: nutritionResponse.data.recommendedCalories || 2000,
+            recommendedCarbs: nutritionResponse.data.recommendedCarbs || 250,
+            recommendedProtein: nutritionResponse.data.recommendedProtein || 60,
+            recommendedFat: nutritionResponse.data.recommendedFat || 67
+          }
+          
+          // 设置餐次记录
+          selectedDayMeals.value = nutritionResponse.data.meals || []
+          console.log('设置营养数据:', selectedDayData.value)
+          console.log('设置餐食数据:', selectedDayMeals.value)
+        } else {
+          console.log('当天没有数据')
+          selectedDayData.value = null
+          selectedDayMeals.value = []
+        }
+      } catch (error) {
+        console.error('获取数据失败:', error)
+        selectedDayData.value = null
+        selectedDayMeals.value = []
+      }
+    } else {
+      console.log('用户ID不存在，无法获取餐食记录')
+      selectedDayMeals.value = []
     }
   } catch (error) {
     console.error('获取日详情失败:', error)
-    ElMessage.error('获取日详情失败')
-    // 设置为null，但不关闭对话框
     selectedDayData.value = null
     selectedDayMeals.value = []
   }
@@ -411,19 +567,20 @@ const loadDayDetails = async (dateData) => {
 // 格式化选中日期显示
 const formatSelectedDate = (dateStr) => {
   const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long'
-  })
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const weekday = weekdays[date.getDay()]
+
+  return `${year}年${month}月${day}日 ${weekday}`
 }
 
 // 获取餐次类型名称
 const getMealTypeName = (mealType) => {
   const mealTypeMap = {
     'breakfast': '早餐',
-    'lunch': '午餐', 
+    'lunch': '午餐',
     'dinner': '晚餐',
     'snack': '加餐'
   }
@@ -432,7 +589,17 @@ const getMealTypeName = (mealType) => {
 
 // 格式化时间
 const formatTime = (timeStr) => {
+  if (!timeStr) {
+    return '--:--'
+  }
+  
   const date = new Date(timeStr)
+  
+  // 检查日期是否有效
+  if (isNaN(date.getTime())) {
+    return '--:--'
+  }
+  
   return date.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit'
@@ -450,17 +617,37 @@ const handleCloseDialog = () => {
 const goToAddMeal = () => {
   dialogVisible.value = false
   // 将当前选中的日期通过事件发送给父组件
-  const rawDate = selectedDate.value.replace(/年|月|日|星期./g, '').trim()
-  emit('add-meal', rawDate)
+  emit('add-meal', selectedDate.value)
 }
 
+// 按餐次类型分组餐食记录
+const groupMealsByType = (meals) => {
+  if (!meals || meals.length === 0) return []
+  
+  // 按餐次类型分组
+  const mealsByType = {}
+  
+  meals.forEach(meal => {
+    const type = meal.mealType
+    if (!mealsByType[type]) {
+      mealsByType[type] = {
+        type: type,
+        time: meal.createTime,
+        foods: []
+      }
+    }
+    
+    // 将餐食添加到对应分组
+    mealsByType[type].foods.push(meal)
+  })
+  
+  // 转换为数组
+  return Object.values(mealsByType)
+}
 
 // 组件挂载时获取数据
 onMounted(() => {
   fetchStatisticsData()
-})
-
-onMounted(() => {
   const now = new Date()
   loadMonthNutrition(now.getFullYear(), now.getMonth() + 1)
 })
@@ -752,173 +939,16 @@ const getProgressStyle = (percentage, color) => {
   min-height: 0;
 }
 
-.calendar-wrapper {
-  background: white;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-  position: relative;
-  overflow: hidden;
-}
-
-.calendar-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-/* 日历表格样式 */
-:deep(.el-calendar) {
-  border: none;
-  background: transparent;
-}
-
-:deep(.el-calendar__header) {
-  padding: 0 0 24px 0;
-  border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-:deep(.el-calendar__title) {
-  color: #1e293b;
-  font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-:deep(.el-calendar__button-group) {
-  display: flex;
-  gap: 8px;
-}
-
-:deep(.el-calendar__button-group .el-button) {
-  border-radius: 12px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-:deep(.el-calendar__button-group .el-button--text) {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-:deep(.el-calendar__button-group .el-button--text:hover) {
-  background: rgba(16, 185, 129, 0.15);
-  transform: translateY(-1px);
-}
-
-:deep(.el-calendar__body) {
-  padding: 0;
-}
-
-:deep(.el-calendar-table) {
-  table-layout: fixed;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-:deep(.el-calendar-table thead th) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #64748b;
-  font-weight: 600;
-  padding: 16px 8px;
-  border: 1px solid #e2e8f0;
-  font-size: 14px;
-}
-
-:deep(.el-calendar-table td) {
-  height: auto;
-  padding: 0;
-  border: 1px solid #e2e8f0;
-  background: white;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-:deep(.el-calendar-table td:hover) {
-  background: rgba(16, 185, 129, 0.02);
-  border-color: #10b981;
-}
-
-:deep(.el-calendar-table td.is-today) {
-  background: rgba(16, 185, 129, 0.05);
-  border-color: #10b981;
-}
-
-:deep(.el-calendar-table td.is-today::before) {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
-  background: #10b981;
-  border-radius: 50%;
-}
-
-:deep(.el-calendar-day) {
-  height: 100%;
-  padding: 0;
-  min-height: 140px;
-}
-
-/* 日历格子内容 */
-.calendar-cell {
-  height: 100%;
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  position: relative;
-  z-index: 5; /* 提高z-index确保可点击 */
-}
-
-.calendar-cell.clickable {
-  cursor: pointer;
-}
-
-.calendar-cell:hover {
-  background: rgba(16, 185, 129, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.calendar-cell.has-data {
-  background: rgba(16, 185, 129, 0.02);
-  border: 1px solid rgba(16, 185, 129, 0.1);
-}
-
-.calendar-cell.has-data:hover {
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.2);
-}
-
-.calendar-cell:active {
-  transform: translateY(0);
-}
-
+/* 日期数字样式 */
 .date-number {
   font-size: 16px;
-  color: #1e293b;
-  font-weight: 600;
-  align-self: flex-start;
+  font-weight: 500;
+  color: #374151;
+  transition: color 0.3s ease;
+}
+
+.calendar-cell:hover .date-number {
+  color: #10b981;
 }
 
 .nutrition-bars {
@@ -1043,7 +1073,7 @@ const getProgressStyle = (percentage, color) => {
     gap: 16px;
     align-items: stretch;
   }
-  
+
   .view-toggle,
   .range-selector {
     justify-content: center;
@@ -1055,37 +1085,37 @@ const getProgressStyle = (percentage, color) => {
   .calendar-view {
     padding: 16px;
   }
-  
+
   .chart,
   .calendar-wrapper {
     padding: 16px;
   }
-  
+
   :deep(.el-calendar__title) {
     font-size: 18px;
   }
-  
+
   .calendar-cell {
     padding: 8px 4px;
   }
-  
+
   .date-number {
     font-size: 14px;
   }
-  
+
   .nutrition-bar {
     height: 16px;
   }
-  
+
   .progress-bar {
     height: 6px;
   }
-  
+
   .label {
     width: 14px;
     font-size: 10px;
   }
-  
+
   .value {
     min-width: 24px;
     font-size: 9px;
@@ -1245,14 +1275,14 @@ const getProgressStyle = (percentage, color) => {
 }
 
 .food-items {
-  padding: 16px 20px;
+  padding: 10px 15px;
 }
 
 .food-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -1272,12 +1302,13 @@ const getProgressStyle = (percentage, color) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .food-name {
   font-weight: 500;
   color: #1f2937;
+  font-size: 14px;
 }
 
 .food-amount {
@@ -1289,6 +1320,8 @@ const getProgressStyle = (percentage, color) => {
   font-size: 14px;
   color: #10b981;
   font-weight: 500;
+  text-align: right;
+  min-width: 70px;
 }
 
 .empty-state {
@@ -1330,27 +1363,230 @@ const getProgressStyle = (percentage, color) => {
   padding: 24px;
 }
 
-/* 响应式样式 */
+/* 自定义日历样式 */
+.custom-calendar {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-calendar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.month-year {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 16px;
+}
+
+.weekday {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f1f5f9;
+  padding: 2px;
+}
+
+.day-cell {
+  min-height: 120px;
+  background: white;
+  border-radius: 8px;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.day-cell:hover {
+  background: rgba(16, 185, 129, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.2);
+}
+
+.day-cell.other-month {
+  background: #f8fafc;
+  color: #cbd5e1;
+}
+
+.day-cell.other-month .day-number {
+  color: #cbd5e1;
+}
+
+.day-cell.today {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border: 2px solid #10b981;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+}
+
+.day-cell.today .day-number {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.day-cell.has-data {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(255, 255, 255, 1) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.day-cell.selected {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.3);
+}
+
+.day-cell.selected .day-number {
+  color: white;
+  font-weight: 700;
+}
+
+.day-number {
+  font-size: 16px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.3s ease;
+  z-index: 2;
+  position: relative;
+}
+
+.nutrition-indicators {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+}
+
+.nutrition-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nutrition-dot.calories {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.nutrition-dot.carbs {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.nutrition-dot.protein {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.nutrition-dot.fat {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.day-cell:hover .nutrition-dot {
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.day-cell.selected .nutrition-indicators {
+  filter: brightness(1.2);
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .nutrition-cards {
-    grid-template-columns: 1fr;
+  .custom-calendar {
+    padding: 16px;
   }
-  
-  .meal-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+
+  .calendar-header {
+    margin-bottom: 16px;
   }
-  
-  .food-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+
+  .month-year {
+    font-size: 18px;
   }
-  
-  .food-image {
-    width: 40px;
-    height: 40px;
+
+  .weekday {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  .day-cell {
+    min-height: 80px;
+    padding: 8px 4px;
+  }
+
+  .day-number {
+    font-size: 14px;
+  }
+
+  .nutrition-dot {
+    width: 6px;
+    height: 6px;
   }
 }
+
+/* 动画效果 */
+.day-cell {
+  animation: fadeInScale 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 </style>

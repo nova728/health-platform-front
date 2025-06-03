@@ -76,15 +76,82 @@
             <div class="section-header">
               <h3>消息通知</h3>
             </div>
-            <div class="settings-content">
-              <div class="setting-item">
+            <div class="settings-content">              <div class="setting-item">
                 <div class="setting-info">
                   <h4>系统通知</h4>
-                  <p class="setting-desc">接收系统更新、维护等重要通知</p>
+                  <p class="setting-desc">接收系统更新、维护通知和健康周报</p>
                 </div>
-                <el-switch v-model="notificationSettings.system" />
+                <div class="setting-action">
+                  <el-switch 
+                    v-model="notificationSettings.system" 
+                    :loading="systemNotificationLoading"
+                    @change="handleSystemNotificationChange"
+                  />
+                </div>
               </div>
-              <div class="setting-item">
+              
+              <!-- 周报设置 -->
+              <div v-if="notificationSettings.system" class="setting-item weekly-report-setting">
+                <div class="setting-info">
+                  <h4>健康周报</h4>
+                  <p class="setting-desc">每周自动发送健康数据汇总报告到您的邮箱</p>
+                </div>
+                <div class="setting-action">
+                  <el-switch 
+                    v-model="notificationSettings.weeklyReport" 
+                    :loading="weeklyReportLoading"
+                    @change="handleWeeklyReportChange"
+                  />
+                </div>
+              </div>
+              
+              <!-- 周报时间设置 -->
+              <div v-if="notificationSettings.system && notificationSettings.weeklyReport" class="setting-item">
+                <div class="setting-info">
+                  <h4>发送时间</h4>
+                  <p class="setting-desc">选择每周接收健康报告的时间</p>
+                </div>
+                <div class="setting-action time-setting">
+                  <el-select 
+                    v-model="notificationSettings.weeklyReportDay" 
+                    placeholder="选择星期"
+                    @change="handleWeeklyReportTimeChange"
+                  >
+                    <el-option label="周一" value="1" />
+                    <el-option label="周二" value="2" />
+                    <el-option label="周三" value="3" />
+                    <el-option label="周四" value="4" />
+                    <el-option label="周五" value="5" />
+                    <el-option label="周六" value="6" />
+                    <el-option label="周日" value="0" />
+                  </el-select>
+                  <el-time-picker
+                    v-model="notificationSettings.weeklyReportTime"
+                    format="HH:mm"
+                    placeholder="选择时间"
+                    @change="handleWeeklyReportTimeChange"
+                  />
+                </div>
+              </div>
+              
+              <!-- 测试周报按钮 -->
+              <!-- <div v-if="notificationSettings.system && notificationSettings.weeklyReport" class="setting-item">
+                <div class="setting-info">
+                  <h4>测试周报</h4>
+                  <p class="setting-desc">立即发送一份测试周报到您的邮箱</p>
+                </div>
+                <div class="setting-action">
+                  <el-button 
+                    type="primary" 
+                    size="small"
+                    :loading="testReportLoading"
+                    @click="sendTestReport"
+                  >
+                    发送测试周报
+                  </el-button>
+                </div>
+              </div> -->
+              <!-- <div class="setting-item">
                 <div class="setting-info">
                   <h4>运动提醒</h4>
                   <p class="setting-desc">定期提醒运动和活动</p>
@@ -97,7 +164,7 @@
                   <p class="setting-desc">提醒记录每日饮食情况</p>
                 </div>
                 <el-switch v-model="notificationSettings.diet" />
-              </div>
+              </div> -->
             </div>
           </div>
 
@@ -308,8 +375,16 @@ const userInfo = ref(store.state.user || {})
 const notificationSettings = reactive({
   system: true,
   exercise: true,
-  diet: true
+  diet: true,
+  weeklyReport: true,
+  weeklyReportDay: '1', // 默认周一
+  weeklyReportTime: new Date(new Date().setHours(9, 0, 0, 0)) // 默认9:00
 })
+
+// 加载状态
+const systemNotificationLoading = ref(false)
+const weeklyReportLoading = ref(false)
+const testReportLoading = ref(false)
 
 const privacySettings = reactive({
   profile: 'public',
@@ -414,6 +489,24 @@ const fetchUserSettings = async () => {
 
       generalSettings.language = settings.language
       generalSettings.theme = settings.theme
+    }
+      // 获取周报设置
+    try {
+      const weeklyReportResponse = await axios.get(`http://localhost:8088/api/weekly-report/settings/${userId}`)
+      if (weeklyReportResponse.data.code === 200) {
+        const reportSettings = weeklyReportResponse.data.data
+        notificationSettings.weeklyReport = reportSettings.enabled || false
+        notificationSettings.weeklyReportDay = reportSettings.day || '1'
+        
+        // 解析时间字符串为Date对象
+        if (reportSettings.time) {
+          const [hours, minutes] = reportSettings.time.split(':')
+          notificationSettings.weeklyReportTime = new Date(new Date().setHours(parseInt(hours), parseInt(minutes), 0, 0))
+        }
+      }
+    } catch (error) {
+      console.warn('获取周报设置失败，使用默认值:', error)
+      // 使用默认值，不显示错误信息
     }
   } catch (error) {
     ElMessage.error('获取设置失败，请重试')
@@ -582,6 +675,125 @@ const submitEmailBind = async () => {
   }
 }
 
+// 处理系统通知变化
+const handleSystemNotificationChange = async (value) => {
+  systemNotificationLoading.value = true
+  try {
+    const response = await axios.put(`http://localhost:8088/api/settings/${userId}/notifications`, {
+      systemNotification: value,
+      exerciseNotification: notificationSettings.exercise,
+      dietNotification: notificationSettings.diet
+    })
+
+    if (response.data.code === 200) {
+      if (value) {
+        ElMessage.success('系统通知已开启，您将收到健康周报等重要通知')
+      } else {
+        ElMessage.warning('系统通知已关闭，您将不再收到任何系统通知和健康周报')
+        // 关闭系统通知时自动关闭周报
+        notificationSettings.weeklyReport = false
+        
+        // 同步更新周报设置到后端
+        try {
+          await axios.put(`http://localhost:8088/api/weekly-report/settings/${userId}`, {
+            enabled: false,
+            day: notificationSettings.weeklyReportDay,
+            time: notificationSettings.weeklyReportTime?.getHours() + ':' + 
+                  String(notificationSettings.weeklyReportTime?.getMinutes()).padStart(2, '0')
+          })
+        } catch (error) {
+          console.error('同步关闭周报设置失败:', error)
+        }
+      }
+    } else {
+      ElMessage.error('设置保存失败')
+      // 恢复原值
+      notificationSettings.system = !value
+    }
+  } catch (error) {
+    console.error('保存系统通知设置失败:', error)
+    ElMessage.error('保存设置失败，请重试')
+    notificationSettings.system = !value
+  } finally {
+    systemNotificationLoading.value = false
+  }
+}
+
+// 处理周报设置变化
+const handleWeeklyReportChange = async (value) => {
+  weeklyReportLoading.value = true
+  try {
+    // 调用WeeklyReportController的周报设置API
+    const response = await axios.put(`http://localhost:8088/api/weekly-report/settings/${userId}`, {
+      enabled: value,
+      day: notificationSettings.weeklyReportDay,
+      time: notificationSettings.weeklyReportTime?.getHours() + ':' + 
+            String(notificationSettings.weeklyReportTime?.getMinutes()).padStart(2, '0')
+    })
+
+    if (response.data.code === 200) {
+      if (value) {
+        ElMessage.success('健康周报已开启，每周将自动发送到您的邮箱')
+      } else {
+        ElMessage.info('健康周报已关闭')
+      }
+    } else {
+      ElMessage.error('周报设置保存失败')
+      notificationSettings.weeklyReport = !value
+    }
+  } catch (error) {
+    console.error('保存周报设置失败:', error)
+    ElMessage.error('保存周报设置失败，请重试')
+    notificationSettings.weeklyReport = !value
+  } finally {
+    weeklyReportLoading.value = false
+  }
+}
+
+// 处理周报时间变化
+const handleWeeklyReportTimeChange = async () => {
+  if (!notificationSettings.weeklyReport) return
+  
+  try {
+    const response = await axios.put(`http://localhost:8088/api/weekly-report/settings/${userId}`, {
+      enabled: notificationSettings.weeklyReport,
+      day: notificationSettings.weeklyReportDay,
+      time: notificationSettings.weeklyReportTime?.getHours() + ':' + 
+            String(notificationSettings.weeklyReportTime?.getMinutes()).padStart(2, '0')
+    })
+
+    if (response.data.code === 200) {
+      ElMessage.success('周报发送时间已更新')
+    }
+  } catch (error) {
+    console.error('保存周报时间失败:', error)
+    ElMessage.error('保存时间设置失败')
+  }
+}
+
+// 发送测试周报
+const sendTestReport = async () => {
+  testReportLoading.value = true
+  try {
+    const response = await axios.post(`http://localhost:8088/api/weekly-report/test/${userId}`)
+    
+    if (response.data.code === 200) {
+      ElMessage.success('测试周报发送成功！请检查您的邮箱')
+    } else {
+      ElMessage.error(response.data.message || '发送失败')
+    }
+  } catch (error) {
+    console.error('发送测试周报失败:', error)
+    if (error.response?.status === 404) {
+      ElMessage.error('周报服务暂时不可用，请稍后重试')
+    } else {
+      ElMessage.error('发送测试周报失败，请重试')
+    }
+  } finally {
+    testReportLoading.value = false
+  }
+}
+
 // 监听对话框关闭
 const handleDialogClose = () => {
   if (passwordFormRef.value) {
@@ -592,13 +804,13 @@ const handleDialogClose = () => {
   passwordForm.confirmPassword = ''
 }
 
-// 监听设置变更并保存
-watch(notificationSettings, async (newSettings) => {
+// 监听其他通知设置变更
+watch(() => [notificationSettings.exercise, notificationSettings.diet], async ([exercise, diet]) => {
   try {
     const response = await axios.put(`http://localhost:8088/api/settings/${userId}/notifications`, {
-      systemNotification: newSettings.system,
-      exerciseNotification: newSettings.exercise,
-      dietNotification: newSettings.diet
+      systemNotification: notificationSettings.system,
+      exerciseNotification: exercise,
+      dietNotification: diet
     })
 
     if (response.data.code !== 200) {
@@ -607,7 +819,7 @@ watch(notificationSettings, async (newSettings) => {
   } catch (error) {
     ElMessage.error('保存设置失败，请重试')
   }
-}, { deep: true })
+})
 
 watch(privacySettings, async (newSettings) => {
   try {
