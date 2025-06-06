@@ -173,9 +173,7 @@
             <template #image>
               <div class="empty-image">⏰</div>
             </template>
-          </el-empty>
-
-          <el-scrollbar height="100%" class="reminders-scrollbar">
+          </el-empty>          <el-scrollbar height="calc(70vh - 200px)" class="reminders-scrollbar">
             <div class="reminders-list">
               <div
                   v-for="reminder in reminders"
