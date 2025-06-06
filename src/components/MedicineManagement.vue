@@ -53,9 +53,6 @@
           <el-option label="📅 本月" value="month" />
           <el-option label="📅 全部记录" value="all" />
         </el-select>
-        <el-button @click="refreshRecords" class="refresh-btn" circle>
-          <el-icon><Refresh /></el-icon>
-        </el-button>
       </div>
     </div>    <!-- 主要内容区域 -->
     <div class="main-content">
