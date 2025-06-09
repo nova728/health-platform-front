@@ -147,10 +147,11 @@ const timePeriods = [
 const bmiStatus = computed(() => {
   const bmi = latestBMI.value
   if (!bmi) return { text: '-', class: 'normal' }
-  if (bmi < 18.5) return { text: '偏瘦', class: 'low' }
-  if (bmi < 24) return { text: '正常', class: 'normal' }
-  if (bmi < 28) return { text: '超重', class: 'high' }
-  return { text: '肥胖', class: 'danger' }
+  if (bmi <= 18.4) return { text: '偏瘦', class: 'low' }
+  if (bmi < 24.0) return { text: '正常', class: 'normal' }
+  if (bmi >= 24.0 && bmi <= 27.9) return { text: '超重', class: 'high' }
+  if (bmi >= 28.0) return { text: '肥胖', class: 'danger' }
+  return { text: '正常', class: 'normal' }
 })
 
 const averageBMI = computed(() => {

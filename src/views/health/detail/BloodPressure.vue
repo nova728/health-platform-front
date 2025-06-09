@@ -248,9 +248,8 @@ const isValidInput = computed(() => {
 
 const checkBloodPressureWarnings = (newSystolic, newDiastolic, recentData) => {
   if (recentData.length < 1) return;
-
   // 1. 检查当前血压范围
-  if (newSystolic >= 140 || newDiastolic >= 90) {
+  if (newSystolic >= 140) {
     ElMessage.warning('当前血压偏高，建议放松心情，避免剧烈运动');
     return;
   }
@@ -268,19 +267,18 @@ const checkBloodPressureWarnings = (newSystolic, newDiastolic, recentData) => {
   if (systolicChange > 30 || diastolicChange > 20) {
     ElMessage.warning('血压变化幅度较大，请注意休息');
   }
-
   // 3. 检查最近记录的异常情况
   const recentReadings = recentData.slice(0, 5); // 检查最近5条记录
   const abnormalReadings = recentReadings.filter(record =>
       record.systolic >= 140 ||
       record.systolic < 90 ||
-      record.diastolic >= 90 ||
       record.diastolic < 60
   );
 
   // 如果新记录也异常，且已有其他异常记录
-  if ((newSystolic >= 140 || newSystolic < 90 ||
-          newDiastolic >= 90 || newDiastolic < 60) &&
+  if ((newSystolic >= 140 ||
+          newSystolic < 90 ||
+          newDiastolic < 60) &&
       abnormalReadings.length >= 2) {
     ElMessage.warning('检测到连续异常血压记录，建议及时就医');
   }
@@ -288,8 +286,9 @@ const checkBloodPressureWarnings = (newSystolic, newDiastolic, recentData) => {
   // 4. 检查异常比例
   const totalReadings = recentReadings.length + 1; // 包括新记录
   const abnormalCount = abnormalReadings.length +
-      (newSystolic >= 140 || newSystolic < 90 ||
-      newDiastolic >= 90 || newDiastolic < 60 ? 1 : 0);
+      (newSystolic >= 140 ||
+      newSystolic < 90 ||
+      newDiastolic < 60 ? 1 : 0);
 
   if (abnormalCount / totalReadings >= 0.3) {
     ElMessage.warning('检测到较多异常血压记录，请注意定期复查');
@@ -298,24 +297,24 @@ const checkBloodPressureWarnings = (newSystolic, newDiastolic, recentData) => {
 
 // 方法
 const getBloodPressureStatus = (systolic, diastolic) => {
-  if (systolic >= 140 || diastolic >= 90) {
-    return { text: '血压偏高', class: 'high' }
-  }
   if (systolic < 90 || diastolic < 60) {
     return { text: '血压偏低', class: 'low' }
+  }
+  if (systolic >= 140) {
+    return { text: '血压偏高', class: 'high' }
   }
   return { text: '血压正常', class: 'normal' }
 }
 
 const getBloodPressureClass = (systolic, diastolic) => {
-  if (systolic >= 140 || diastolic >= 90) return 'status-high'
   if (systolic < 90 || diastolic < 60) return 'status-low'
+  if (systolic >= 140) return 'status-high'
   return 'status-normal'
 }
 
 const getBloodPressureStatusText = (systolic, diastolic) => {
-  if (systolic >= 140 || diastolic >= 90) return '血压偏高'
   if (systolic < 90 || diastolic < 60) return '血压偏低'
+  if (systolic >= 140) return '血压偏高'
   return '血压正常'
 }
 

@@ -63,9 +63,7 @@
             />
           </div>
         </div>
-      </div>
-
-      <!-- 血压模块 -->
+      </div>      <!-- 血压模块 -->
       <div class="data-card medium" @click="navigateTo('blood-pressure')">
         <div class="card-header">
           <ActivityIcon class="card-icon" />
@@ -78,7 +76,7 @@
             <span class="diastolic">{{latestHealthData.bloodPressureDiastolic}}</span>
             <span class="unit">mmHg</span>
           </div>
-          <div class="status normal">正常</div>
+          <div class="status" :class="bloodPressureStatus.class">{{ bloodPressureStatus.text }}</div>
         </div>
       </div>
 
@@ -111,9 +109,7 @@
           <div class="weight-value">{{ latestHealthData.weight }}</div>
           <div class="unit">kg</div>
         </div>
-      </div>
-
-      <!-- BMI模块 -->
+      </div>      <!-- BMI模块 -->
       <div class="data-card small" @click="navigateTo('bmi')">
         <div class="card-header">
           <ActivitySquareIcon class="card-icon" />
@@ -121,7 +117,7 @@
         </div>
         <div class="card-content">
           <div class="bmi-value">{{latestHealthData.bmi}}</div>
-          <div class="status normal">正常</div>
+          <div class="status" :class="bmiStatus.class">{{ bmiStatus.text }}</div>
         </div>
       </div>
 
@@ -162,6 +158,27 @@ const heightPercentage = computed(() => {
   if (!height) return 0
   // 假设身高范围在140-200cm之间
   return Math.min(100, Math.max(0, ((height - 140) / (200 - 140)) * 100))
+})
+
+// 计算BMI状态
+const bmiStatus = computed(() => {
+  const bmi = latestHealthData.value.bmi
+  if (!bmi) return { text: '-', class: 'normal' }
+  if (bmi <= 18.4) return { text: '偏瘦', class: 'low' }
+  if (bmi < 24.0) return { text: '正常', class: 'normal' }
+  if (bmi >= 24.0 && bmi <= 27.9) return { text: '超重', class: 'high' }
+  if (bmi >= 28.0) return { text: '肥胖', class: 'danger' }
+  return { text: '正常', class: 'normal' }
+})
+
+// 计算血压状态
+const bloodPressureStatus = computed(() => {
+  const systolic = latestHealthData.value.bloodPressureSystolic
+  const diastolic = latestHealthData.value.bloodPressureDiastolic
+  if (!systolic || !diastolic) return { text: '-', class: 'normal' }
+  if (systolic < 90 || diastolic < 60) return { text: '血压偏低', class: 'low' }
+  if (systolic >= 140) return { text: '血压偏高', class: 'high' }
+  return { text: '正常', class: 'normal' }
 })
 
 const fetchHeartRateData = async () => {
@@ -628,6 +645,21 @@ const navigateTo = (route) => {
 .status.normal {
   background: linear-gradient(135deg, #f0f9eb, #e7f6d9);
   color: #67c23a;
+}
+
+.status.low {
+  background: linear-gradient(135deg, #fdf6ec, #fbeecf);
+  color: #e6a23c;
+}
+
+.status.high {
+  background: linear-gradient(135deg, #fef0f0, #fde2e2);
+  color: #f56c6c;
+}
+
+.status.danger {
+  background: linear-gradient(135deg, #fef0f0, #fde2e2);
+  color: #f56c6c;
 }
 
 /* 身高模块样式 */
